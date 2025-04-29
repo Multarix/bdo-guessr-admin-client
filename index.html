@@ -21,19 +21,23 @@
 		<!-- Left column: Map -->
 		<div id="map"></div>
 		
-		<div class="syncContainer">
+		<div id="syncContainer" class="syncContainer" style="display: none">
 			<button disabled id="syncToServer" class="syncToServer">
 				<span id="syncText">Sync</span>
 				<div style="display: none" id="syncLoad" class="loader"></div>
 			</button>
 		</div>
+		
+		<div id="statusContainer">
+			<p id="statusMessage" class="statusMessage">Test Status Message</p>
+		</div>
+		
 		<!-- Right column: Controls, Info, Upload, and Stats -->
 		<div id="controls" class="submitFormDiv">
 			<div class="center-container">
 				<!-- Info Panel -->
 				<div id="infoPanel">
 					<!-- Dropdown for updating difficulty -->
-					<label for="infoDifficulty">Difficulty:</label>
 					<select disabled id="infoDifficulty">
 						<option value="" selected disabled hidden></option>
 						<option value="easy">Easy</option>
@@ -41,9 +45,11 @@
 						<option value="hard">Hard</option>
 						<option value="impossible">Impossible</option>
 					</select>
-					<input disabled id="originalDifficulty" type="text" style="display: none">
-					<img id="imgPreview" width="100%" src="./static/images/placeholder.png">
-					<button disabled type="button" id="updateDifficultyBtn">Update Difficulty</button>
+					<input disabled type="text" id="infoHint" name="infoHint" placeholder="Challenge Hint">
+					<input disabled type="text" id="infoFact" name="infoFact" placeholder="Challenge Fact">
+					<input disabled type="text" id="originalDifficulty" name="originalDifficulty" style="display: none">
+					<input disabled type="hidden" id="imgPath" name="imgPath">
+					<button disabled type="button" id="updateChallengeBtn">Update Challenge</button>
 					<button disabled type="button" id="deleteBtn" class="deleteBtn">Delete Challenge</button>
 				</div>
 				<hr>
@@ -61,15 +67,15 @@
 							<input required="" type="text" id="lng" name="lng" class="coordinate">
 						</div>
 					</div>
-					<label>Select Difficulty Level</label>
 					<select required="" id="uploadDifficulty" name="uploadDifficulty">
-						<option value="" selected disabled hidden></option>
+						<option value="" selected disabled hidden>Select Difficulty</option>
 						<option value="easy">Easy</option>
 						<option value="medium">Medium</option>
 						<option value="hard">Hard</option>
 						<option value="impossible">Impossible</option>
 					</select>
-					<label>Select Screenshot File</label>
+					<input type="text" id="hint" name="hint" placeholder="Challenge Hint">
+					<input type="text" id="fact" name="fact" placeholder="Challenge Fact">
 					<div class="fileSelector">
 						<button disabled id="screenshot" class="chooseFileButton">Browse...</button>
 						<input required="" disabled type="text" name="fileName" id="fileName" minlength="1"
@@ -99,7 +105,7 @@
 					</div>
 				</div>
 				<div class="challengeStatsDiv">
-					<label>New Challenges</label>
+					<label>Local Challenges</label>
 					<div>
 						<div class="stats" style="color:rgb(11,230,11)">
 							<span id="easyCountNew">0</span>
@@ -115,7 +121,6 @@
 						</div>
 					</div>
 				</div>
-				<p id="statusMessage" class="statusMessage"></p>
 			</div><!-- end center-container -->
 		</div><!-- end controls -->
 	</div>
