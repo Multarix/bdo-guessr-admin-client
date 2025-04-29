@@ -1,0 +1,289 @@
+/* Generics */
+body {
+
+	background-color: #2b2b2b;
+	color: white;
+	font-family: Arial, sans-serif;
+	margin: 0;
+}
+
+.leaflet-control-attribution.leaflet-control {
+	display: none;
+}
+
+.leaflet-container {
+	cursor: unset !important;
+}
+
+.leaflet-interactive {
+	cursor: pointer !important;
+}
+
+
+
+label {
+	display: block;
+	margin: 10px 0 5px;
+	font-weight: bold;
+	margin-left: 2px;
+}
+
+form {
+	margin-bottom: 0;
+}
+
+.center-container input,
+button,
+select {
+	width: 100%;
+	padding: 10px;
+	margin: 5px 0;
+	font-size: 16px;
+	box-sizing: border-box;
+	border: 2px solid #444;
+	border-radius: 5px;
+}
+
+input[type="file"] {
+	background: #444;
+	color: white;
+	border: 2px solid #363636;
+	padding: 10px;
+}
+
+input[type="file"]::file-selector-button {
+	background-color: #4caf50;
+	border: none;
+	color: #ffffff;
+	padding: 10px;
+	border-radius: 5px;
+	cursor: pointer;
+	font-size: 16px;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+
+	transition: background-color 0.1s ease;
+
+	&:hover {
+		background-color: #3f9242;
+	}
+}
+
+input::file-selector-button {
+	margin-right: 1em;
+}
+
+button {
+	background-color: #4caf50;
+	color: white;
+	border: none;
+	cursor: pointer;
+	transition: background-color 0.1s ease;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+
+	&:hover {
+		background-color: #3f9242;
+	}
+}
+
+
+
+hr {
+	margin: 1em 0;
+}
+
+/* Admin Page UI */
+.syncContainer {
+	position: absolute;
+	left: 8px;
+	bottom: 8px;
+	z-index: 999;
+
+	background-color: #444;
+
+	border-radius: 10px;
+	border: 2px solid rgb(163, 163, 163);
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 1);
+	padding: 0;
+	margin: 0;
+}
+
+.syncToServer {
+	background-color: rgb(170, 17, 216);
+	height: 38px;
+	width: 100px;
+	margin: 6px;
+	padding: 0;
+}
+
+.syncToServer:hover {
+	background-color: rgb(144, 14, 184);
+}
+
+
+.admin-wrapper {
+	display: grid;
+	grid-template-columns: calc(100% - 275px) 275px;
+	height: 100vh;
+	overflow: hidden;
+}
+
+#map {
+	height: 100%;
+	max-height: 100vh;
+
+	border-right: 2px solid rgb(163, 163, 163);
+}
+
+.submitFormDiv {
+	box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+
+	height: fit-content;
+	max-height: 100vh;
+	background-color: #444;
+
+	border-radius: 10px 0 0 10px;
+	border: 2px solid rgb(163, 163, 163);
+	border-right: unset;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 1);
+
+	z-index: 999;
+	margin: auto 0;
+	margin-left: 8px;
+
+	overflow-y: auto;
+	-ms-overflow-style: none;
+	/* Internet Explorer 10+ */
+	scrollbar-width: none;
+	/* Firefox */
+}
+
+.submitFormDiv>div {
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+	width: 270px;
+	padding: 8px 12px 8px 8px;
+	overflow: auto;
+}
+
+.two-col {
+	margin-top: 2px;
+	-webkit-column-count: 2;
+	-moz-column-count: 2;
+	column-count: 2;
+	-webkit-column-fill: balance;
+	-moz-column-fill: balance;
+	column-fill: balance;
+}
+
+.two-col * {
+	margin-top: 0px;
+}
+
+#infoPanel span {
+	display: block;
+	overflow-x: auto;
+}
+
+.challengeStatsDiv {
+	margin-bottom: 4px;
+}
+
+.challengeStatsDiv>div {
+	margin-top: 8px;
+	-webkit-column-count: 4;
+	-moz-column-count: 4;
+	column-count: 4;
+	-webkit-column-fill: balance;
+	-moz-column-fill: balance;
+	column-fill: balance;
+}
+
+.challengeStatsDiv>label {
+	text-align: center;
+	padding-bottom: 2px;
+}
+
+.challengeStatsDiv>div * {
+	margin-top: 0px;
+}
+
+.stats {
+	text-align: center;
+	font-weight: bolder;
+}
+
+
+.fileSelector {
+	display: flex;
+	border: 2px solid #363636;
+	border-radius: 6px;
+	padding: 5px 9px;
+}
+
+::placeholder {
+	color: white;
+}
+
+.fileNameInput {
+	background-color: transparent;
+	color: white;
+	height: 38px;
+}
+
+
+.chooseFileButton {
+	width: 90px;
+	height: 38px;
+	margin-right: 5px;
+}
+
+.deleteBtn {
+	background-color: #f44336;
+	/* red */
+}
+
+.deleteBtn:enabled:hover {
+	background-color: #d32f2f;
+	/* darker red */
+}
+
+#statusMessage {
+	height: 1em;
+	text-align: center;
+	margin-top: 10px;
+	opacity: 0;
+	transition: 1s;
+}
+
+
+button:disabled {
+	background-color: gray;
+	cursor: unset;
+}
+
+/* Loading Icon */
+.loader {
+	box-sizing: border-box;
+	margin: auto;
+	border: 4px solid #f3f3f3;
+	/* Light grey */
+	border-top: 4px solid #34db42;
+	/* Blue */
+	border-radius: 50%;
+	width: 25px;
+	height: 25px;
+	animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+
+	100% {
+		transform: rotate(360deg);
+	}
+}

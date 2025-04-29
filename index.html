@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta http-equiv="Content-Security-Policy"
+		content="default-src 'self'; img-src 'self' data: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self' https://bdoguessr.moe/">
+	<title>Black Desert Map</title>
+	<link rel="stylesheet" href="./static/admin.css">
+
+	<link rel="stylesheet" href="./static/leaflet.css"
+		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" />
+	<script src="./static/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="></script>
+	<script src='./static/Leaflet.fullscreen.min.js'></script>
+	<link href='./static/leaflet.fullscreen.css' rel='stylesheet' />
+
+	<script defer src="./static/script.mjs" type="module"></script>
+</head>
+
+<body>
+	<div class="admin-wrapper">
+		<!-- Left column: Map -->
+		<div id="map"></div>
+		
+		<div class="syncContainer">
+			<button disabled id="syncToServer" class="syncToServer">
+				<span id="syncText">Sync</span>
+				<div style="display: none" id="syncLoad" class="loader"></div>
+			</button>
+		</div>
+		<!-- Right column: Controls, Info, Upload, and Stats -->
+		<div id="controls" class="submitFormDiv">
+			<div class="center-container">
+				<!-- Info Panel -->
+				<div id="infoPanel">
+					<!-- Dropdown for updating difficulty -->
+					<label for="infoDifficulty">Difficulty:</label>
+					<select disabled id="infoDifficulty">
+						<option value="" selected disabled hidden></option>
+						<option value="easy">Easy</option>
+						<option value="medium">Medium</option>
+						<option value="hard">Hard</option>
+						<option value="impossible">Impossible</option>
+					</select>
+					<input disabled id="originalDifficulty" type="text" style="display: none">
+					<img id="imgPreview" width="100%" src="./static/images/placeholder.png">
+					<button disabled type="button" id="updateDifficultyBtn">Update Difficulty</button>
+					<button disabled type="button" id="deleteBtn" class="deleteBtn">Delete Challenge</button>
+				</div>
+				<hr>
+
+				<!-- Upload Form -->
+				<form id="uploadForm" enctype="multipart/form-data" method="post" action="/upload">
+					<input type="hidden" id="date" name="date" required="">
+					<div class="two-col">
+						<div class="col1">
+							<label>Latitude:</label>
+							<input required="" type="text" id="lat" name="lat" class="coordinate">
+						</div>
+						<div class="col2">
+							<label>Longitude:</label>
+							<input required="" type="text" id="lng" name="lng" class="coordinate">
+						</div>
+					</div>
+					<label>Select Difficulty Level</label>
+					<select required="" id="uploadDifficulty" name="uploadDifficulty">
+						<option value="" selected disabled hidden></option>
+						<option value="easy">Easy</option>
+						<option value="medium">Medium</option>
+						<option value="hard">Hard</option>
+						<option value="impossible">Impossible</option>
+					</select>
+					<label>Select Screenshot File</label>
+					<div class="fileSelector">
+						<button disabled id="screenshot" class="chooseFileButton">Browse...</button>
+						<input required="" disabled type="text" name="fileName" id="fileName" minlength="1"
+							class="fileNameInput" placeholder="No file selected.">
+						<input required="" disabled type="text" id="filePath" name="filePath" minlength="1"
+							style="display: none">
+					</div>
+					<button disabled type="submit" id="submitForm" disabled>Upload Challenge</button>
+				</form>
+
+				<!-- Challenge Counts -->
+				<div class="challengeStatsDiv">
+					<label>Total Challenges</label>
+					<div>
+						<div class="stats" style="color:rgb(11,230,11)">
+							<span id="easyCount">169</span>
+						</div>
+						<div class="stats" style="color:rgb(255,217,0)">
+							<span id="mediumCount">133</span>
+						</div>
+						<div class="stats" style="color:rgb(255,79,79)">
+							<span id="hardCount">74</span>
+						</div>
+						<div class="stats" style="color:rgb(255,255,255)">
+							<span id="impossibleCount">21</span>
+						</div>
+					</div>
+				</div>
+				<div class="challengeStatsDiv">
+					<label>New Challenges</label>
+					<div>
+						<div class="stats" style="color:rgb(11,230,11)">
+							<span id="easyCountNew">0</span>
+						</div>
+						<div class="stats" style="color:rgb(255,217,0)">
+							<span id="mediumCountNew">0</span>
+						</div>
+						<div class="stats" style="color:rgb(255,79,79)">
+							<span id="hardCountNew">0</span>
+						</div>
+						<div class="stats" style="color:rgb(255,255,255)">
+							<span id="impossibleCountNew">0</span>
+						</div>
+					</div>
+				</div>
+				<p id="statusMessage" class="statusMessage"></p>
+			</div><!-- end center-container -->
+		</div><!-- end controls -->
+	</div>
+</body>
+
+
+</html>
