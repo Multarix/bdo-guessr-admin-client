@@ -1,12 +1,12 @@
 const { app, BrowserWindow, ipcMain, dialog } = require("electron/main");
-const path = require('node:path');
+const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
+const path = require('path');
 const fs = require("fs");
 const fsPromise = require("fs/promises");
 
 if(!fs.existsSync("./data/")) fs.mkdirSync("./data/");
-if(!fs.existsSync("./data/challenges.json")) fs.writeFileSync("./data/challenges.json", JSON.stringify({ "easy": [], "medium": [], "hard": [], "impossible": [] }, null, "\t"), { encoding: "utf8" });
-
+if(!fs.existsSync("./data/challenges.json")) fs.writeFileSync("./data/challenges.json", JSON.stringify({ "easy": [], "medium": [], "hard": [], "impossible": [], "auth": "" }, null, "\t"), { encoding: "utf8" });
 
 /**
  * @typedef Latlng
@@ -33,6 +33,20 @@ if(!fs.existsSync("./data/challenges.json")) fs.writeFileSync("./data/challenges
 const challengeFile = require("./data/challenges.json");
 
 
+// Set the auth required for uploading. Not yet implimented anywhere else.
+async function setAuth(auth){
+	challengeFile.auth = auth;
+	try {
+		// Save the json
+		await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
+		return { code: 200, message: "Auth Set Successfully" };
+	} catch (e){
+		console.log(e);
+		return { code: 500, message: "Something went wrong with the request." };
+	}
+}
+
+
 // Handle opening a file
 async function openFile(){
 	const { canceled, filePaths } = await dialog.showOpenDialog({
@@ -49,7 +63,7 @@ async function openFile(){
 
 
 // Handle updating the difficulty
-async function handleUpdateDifficulty(_event, data){
+async function handleUpdateChallenge(_event, data){
 	const { originalDiff, newDiff, imageFile } = data;
 	// console.log(data);
 
@@ -71,7 +85,7 @@ async function handleUpdateDifficulty(_event, data){
 		return { code: 200, message: "Challenge updated successfully." };
 	} catch (e){
 		console.log(e);
-		return { code: 501, message: "Something went wrong with the request." };
+		return { code: 500, message: "Something went wrong with the request." };
 	}
 }
 
@@ -102,7 +116,7 @@ async function handleDeleteChallenge(_event, data){
 		return { code: 200, message: "Challenge deleted successfully." };
 	} catch (e){
 		console.log(e);
-		return { code: 501, message: "Something went wrong with the request." };
+		return { code: 500, message: "Something went wrong with the request." };
 	}
 
 }
@@ -110,7 +124,13 @@ async function handleDeleteChallenge(_event, data){
 
 // Handle adding a new entry
 async function handleFormSubmission(_event, form){
-	const { lat, lng, filePath, difficulty } = form;
+	const diffNumber = {
+		"easy": 1,
+		"medium": 2,
+		"hard": 3,
+		"impossible": 4
+	};
+	const { lat, lng, fact, hint, filePath, difficulty } = form;
 	// console.log(form);
 
 	// Make sure the data is set correctly
@@ -129,6 +149,9 @@ async function handleFormSubmission(_event, form){
 		const newChallenge = {
 			date: `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`,
 			src: fileName,
+			fact: fact,
+			hint: hint,
+			difficulty: diffNumber[difficulty],
 			actualLocation: {
 				lat,
 				lng
@@ -142,14 +165,52 @@ async function handleFormSubmission(_event, form){
 		return { code: 200, message: "Challenge saved successfully." };
 	} catch (e){
 		console.log(e);
-		return { code: 501, message: "Something went wrong with the request." };
+		return { code: 500, message: "Something went wrong with the request." };
 	}
 }
 
 
+// Disabled for now.
 async function syncChallengesToServer(){
-	// TODO: Impliment code
-	// Send a POST to beta.bdoguesser.moe/upload with the attached file and relevant fields.
+	["easy", "medium", "hard", "impossible"].forEach(async (difficulty) => {
+		if("true" === "true") return { code: 501, message: "Not yet Implimented!" }; // eslint-disable-line no-constant-condition
+		const challenges = challengeFile[difficulty];
+		for(const challenge of challenges){
+
+			const blob = new Blob([await fsPromise.readFile(challenge.src)]);
+			const fileName = challenge.src.split("/").pop();
+
+			const body = new FormData();
+			body.append("lat", challenge.actualLocation.lat);
+			body.append("lng", challenge.actualLocation.lng);
+			body.append("difficulty", challenge.difficulty);
+			body.append("hint", challenge.hint);
+			body.append("fact", challenge.fact);
+			body.set("screenshot", blob, fileName);
+
+			const response = await fetch("https://beta.bdoguessr.moe/upload", {
+				method: "POST",
+				headers: {
+					"Authorization": `Basic ${challengeFile.auth}`
+				},
+				body
+			});
+
+
+			// Send a message to renderer that this challenge was uploaded if 200 status was returned
+			if(response.status === 200){
+				// Remove challenge from json, move image to "uploaded" folder
+
+
+				// TODO: IPC Main to Render this message
+				console.log({ code: 200, message: `${fileName} was uploaded successfully.` });
+			}
+
+			// TODO: IPC Main to Render this message
+			console.log({ code: response.status, message: `${fileName} failed to upload.` });
+		}
+	});
+
 
 	return { code: 501, message: "Not yet Implimented!" };
 }
@@ -158,8 +219,8 @@ async function syncChallengesToServer(){
 // Create the browser window.
 const createWindow = () => {
 	const win = new BrowserWindow({
-		width: 1600,
-		height: 900,
+		width: 1840,
+		height: 1035,
 		webPreferences: {
 			preload: path.join(__dirname, 'preload.js')
 		}
@@ -175,7 +236,7 @@ async function init(){
 	app.whenReady().then(() => {
 		ipcMain.handle("openFile", openFile);
 		ipcMain.handle("submitForm", handleFormSubmission);
-		ipcMain.handle("updateDifficulty", handleUpdateDifficulty);
+		ipcMain.handle("updateChallenge", handleUpdateChallenge);
 		ipcMain.handle("deleteChallenge", handleDeleteChallenge);
 		ipcMain.handle("syncToServer", syncChallengesToServer);
 
