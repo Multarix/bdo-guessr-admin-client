@@ -3,19 +3,21 @@
 
 const latInput = document.getElementById("lat");
 const lngInput = document.getElementById("lng");
-const submitBtn = document.querySelector('button[type="submit"]');
-const filePath = document.getElementById("filePath");
 const uploadFileBtn = document.getElementById("screenshot");
+const challengefilePath = document.getElementById("filePath");
+const challengeFact = document.getElementById('hint');
+const challengeHint = document.getElementById('fact');
 const submitFormBtn = document.getElementById('submitForm');
+
 const syncToServerBtn = document.getElementById("syncToServer");
-const statusMessage = document.getElementById("statusMessage");
-const updateDiffBtn = document.getElementById("updateDifficultyBtn");
+const updateChallengeBtn = document.getElementById("updateChallengeBtn");
 const deleteBtn = document.getElementById("deleteBtn");
 const infoDifficulty = document.getElementById("infoDifficulty");
-const imgPreview = document.getElementById("imgPreview");
+const imgPath = document.getElementById("imgPath");
 const originalDifficulty = document.getElementById("originalDifficulty");
 
-
+const statusContainer = document.getElementById("statusContainer");
+const statusMessage = document.getElementById("statusMessage");
 
 /* **************************** */
 /*                              */
@@ -122,20 +124,22 @@ uploadFileBtn.addEventListener("click", async (evt) => {
 	document.getElementById("filePath").value = realPath;
 
 
-	submitBtn.disabled = false;
+	submitFormBtn.disabled = false;
 });
 
 // The upload form to update our local store & refresh our challenge markers
 document.getElementById("uploadForm").addEventListener("submit", async (evt) => {
 	evt.preventDefault();
 
-	submitBtn.disabled = true;
+	submitFormBtn.disabled = true;
 	const form = evt.target;
 
 	const formData = {
 		lat: latInput.value,
 		lng: lngInput.value,
-		filePath: filePath.value,
+		fact: challengeFact.value,
+		hint: challengeHint.value,
+		filePath: challengefilePath.value,
 		difficulty: document.getElementById("uploadDifficulty").value
 	};
 
@@ -147,18 +151,19 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 		refreshChallenges();
 
 	} else {
-		submitBtn.disabled = false;
+		submitFormBtn.disabled = false;
 		displayStatusMessage(response);
 	}
 });
 
-// Update Challenge Difficulty
-updateDiffBtn.addEventListener("click", async (evt) => {
+// Update Challenge
+updateChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
-	const screenshot = imgPreview.src.split("/").pop();
+	const screenshot = imgPath.value.split("/").pop();
 	const newDifficulty = infoDifficulty.value;
 	if(originalDifficulty.value === newDifficulty) return;
+	// TODO: update all the fields
 
 	const data = {
 		originalDiff: originalDifficulty.value,
@@ -166,7 +171,7 @@ updateDiffBtn.addEventListener("click", async (evt) => {
 		imageFile: `./data/${screenshot}`
 	};
 
-	const response = await window.electronAPI.updateDifficulty(data);
+	const response = await window.electronAPI.updateChallenge(data);
 	displayStatusMessage(response);
 
 	if(response.code === 200){
@@ -183,7 +188,7 @@ deleteBtn.addEventListener("click", async (evt) => {
 	const confirmation = confirm("Are you sure you want to delete this challenge? This action cannot be undone.");
 	if(!confirmation) return;
 
-	const screenshot = imgPreview.src.split("/").pop();
+	const screenshot = imgPath.value.split("/").pop();
 
 	const data = {
 		difficulty: originalDifficulty.value,
@@ -197,12 +202,12 @@ deleteBtn.addEventListener("click", async (evt) => {
 		// Disable the buttons
 		infoDifficulty.disabled = true;
 		deleteBtn.disabled = true;
-		updateDiffBtn.disabled = true;
+		updateChallengeBtn.disabled = true;
 
 		refreshChallenges();
 
 		// Set the screenshot back to placeholder
-		imgPreview.src = "./static/images/placeholder.png";
+		imgPath.value = "";
 		originalDifficulty.value = "";
 		infoDifficulty.value = "";
 	}
@@ -252,10 +257,10 @@ syncToServerBtn.disabled = false;
 
 function displayStatusMessage(response){
 	statusMessage.textContent = response.message;
-	statusMessage.style.color = (response.code === 200) ? "#4caf50" : "#d32f2f";
-	statusMessage.style.opacity = 1;
+	statusMessage.style.color = (response.code === 200) ? "#31ff00" : "#ff5858";
+	statusContainer.style.top = 0;
 	setTimeout(() => {
-		statusMessage.style.opacity = 0;
+		statusContainer.style.top = "";
 	}, 5000);
 }
 
@@ -276,6 +281,7 @@ function convertToLocalFormat(obj){
 async function fetchAndConvertChallenges(url){
 	const response = await fetch(url);
 	const challenges = await response.json();
+	if(url.startsWith(".") && challenges.auth) document.getElementById("syncContainer").style.display = "";
 
 	const { easy, medium, hard, impossible } = challenges;
 	for(const difficulty of [easy, medium, hard, impossible]){
@@ -311,17 +317,19 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 			radius: 8,
 			weight: 1
 		});
+		circle.bindPopup(`<img class="imgPreview" src="${item.src}">`);
 
 		if(!isHost){
 			circle.on("click", async (evt) => {
 				L.DomEvent.stopPropagation(evt);
+				circle.openPopup();
 
-				imgPreview.src = item.src;
 				originalDifficulty.value = difficulty;
 				infoDifficulty.value = difficulty;
+				imgPath.value = item.src;
 				infoDifficulty.disabled = false;
 				deleteBtn.disabled = false;
-				updateDiffBtn.disabled = false;
+				updateChallengeBtn.disabled = false;
 			});
 		}
 
