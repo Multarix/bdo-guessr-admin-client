@@ -18,7 +18,20 @@ body {
 .leaflet-interactive {
 	cursor: pointer !important;
 }
-
+.leaflet-popup-content {
+	margin: 5px 4px 0 5px !important;
+}
+.imgPreview {
+	width: 250px;
+	border-radius: 8px;
+}
+.leaflet-popup-content-wrapper {
+	background: #444 !important;
+}
+a.leaflet-popup-close-button {
+	top: 3px !important;
+	right: 3px !important;
+}
 
 
 label {
@@ -91,6 +104,8 @@ hr {
 	margin: 1em 0;
 }
 
+
+
 /* Admin Page UI */
 .syncContainer {
 	position: absolute;
@@ -107,6 +122,7 @@ hr {
 	margin: 0;
 }
 
+
 .syncToServer {
 	background-color: rgb(170, 17, 216);
 	height: 38px;
@@ -119,12 +135,39 @@ hr {
 	background-color: rgb(144, 14, 184);
 }
 
+#statusContainer {
+	position: absolute;
+	top: -200px;
+	left: 50%;
+	transform: translateX(-50%);
+	-ms-transform: translateX(-50%);
+	
+	transition: 1s;
+	z-index: 999;
+	
+	background-color: #444;
+	padding: 8px 16px 10px 16px;
+	margin: 0;
+	width: fit-content;
+
+	border-radius: 0 0 10px 10px;
+	border: 2px solid rgb(163, 163, 163);
+	border-top: unset;
+	box-shadow: 0 2px 10px rgba(0, 0, 0, 1);
+}
+
+#statusMessage {
+	height: 1em;
+	text-align: center;
+	margin: 0;
+}
 
 .admin-wrapper {
 	display: grid;
 	grid-template-columns: calc(100% - 275px) 275px;
 	height: 100vh;
 	overflow: hidden;
+	overflow-x: hidden;
 }
 
 #map {
@@ -153,6 +196,7 @@ hr {
 	margin-left: 8px;
 
 	overflow-y: auto;
+	overflow-x: hidden;
 	-ms-overflow-style: none;
 	/* Internet Explorer 10+ */
 	scrollbar-width: none;
@@ -223,14 +267,15 @@ hr {
 	padding: 5px 9px;
 }
 
-::placeholder {
-	color: white;
-}
 
 .fileNameInput {
 	background-color: transparent;
 	color: white;
 	height: 38px;
+}
+
+.fileNameInput::placeholder {
+	color: white;
 }
 
 
@@ -248,14 +293,6 @@ hr {
 .deleteBtn:enabled:hover {
 	background-color: #d32f2f;
 	/* darker red */
-}
-
-#statusMessage {
-	height: 1em;
-	text-align: center;
-	margin-top: 10px;
-	opacity: 0;
-	transition: 1s;
 }
 
 
