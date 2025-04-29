@@ -21,6 +21,7 @@
     "sharp": "^0.34.1"
   },
   "dependencies": {
-    "eslint-plugin-rc-leaflet": "^1.4.0"
+    "eslint-plugin-rc-leaflet": "^1.4.0",
+    "node-fetch": "^3.3.2"
   }
 }
