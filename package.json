@@ -1,7 +1,7 @@
 {
-  "name": "blackdesert-map",
+  "name": "bdoguessr",
   "version": "1.0.0",
-  "description": "BDO Gathering Helper",
+  "description": "Local client for BDOGuessr",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
