@@ -152,7 +152,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 		marker.remove();
 		marker = undefined;
 		displayStatusMessage(response);
-		refreshChallenges();
+		await refreshLocalChallenges();
 
 	} else {
 		submitFormBtn.disabled = false;
@@ -180,7 +180,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 
 	if(response.code === 200){
 		originalDifficulty.value = newDifficulty;
-		refreshChallenges();
+		await refreshLocalChallenges();
 	}
 });
 
@@ -208,7 +208,7 @@ deleteBtn.addEventListener("click", async (evt) => {
 		deleteBtn.disabled = true;
 		updateChallengeBtn.disabled = true;
 
-		refreshChallenges();
+		await refreshLocalChallenges();
 
 		// Set the screenshot back to placeholder
 		imgPath.value = "";
@@ -238,6 +238,7 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 
 	const response = await window.electronAPI.syncToServer();
 	displayStatusMessage(response);
+	await refreshLocalChallenges();
 
 	syncToServerBtn.disabled = false;
 	uploadFileBtn.disabled = false;
@@ -248,6 +249,7 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	syncLoad.style.display = "none";
 });
 
+// Logouts user out to login page
 logoutBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
@@ -256,6 +258,11 @@ logoutBtn.addEventListener("click", async (evt) => {
 	const response = await window.electronAPI.setAuth("");
 
 	if(response.code === 200) return window.location.href = "./login.html";
+	displayStatusMessage(response);
+});
+
+// Update the display the status message for each uploaded challenge
+window.electronAPI.onUpdateStatus((response) => {
 	displayStatusMessage(response);
 });
 
@@ -394,7 +401,7 @@ function updateCounts(new_counts, host_counts){
 	document.getElementById("impossibleCountNew").textContent = new_counts.impossible;
 }
 
-async function refreshChallenges(){
+async function refreshLocalChallenges(){
 	// Refresh the map icons
 	const refreshed_challenges = await fetchAndConvertChallenges("./data/challenges.json");
 	const refreshed_overlays = {
@@ -430,7 +437,6 @@ async function refreshChallenges(){
 	map.removeLayer(impossibleGroup);
 	impossibleGroup = refreshed_overlays.Impossible.addTo(map);
 	layerControl.addOverlay(impossibleGroup, "Impossible");
-
 
 	updateCounts(refreshed_counts, host_overlays.count);
 }

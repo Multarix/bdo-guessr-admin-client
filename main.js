@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require("electron/main");
+const { app, BrowserWindow, ipcMain, dialog, Menu } = require("electron/main");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const path = require('path');
@@ -170,14 +170,13 @@ async function handleFormSubmission(_event, form){
 	}
 }
 
+async function upload(difficulty, win, successes){
+	/** @type {ChallengeData[]} */
+	const challenges = challengeFile[difficulty];
+	if(challenges.length === 0) return successes;
 
-// Disabled for now.
-async function syncChallengesToServer(){
-	["easy", "medium", "hard", "impossible"].forEach(async (difficulty) => {
-		if("true" === "true") return { code: 501, message: "Not yet Implimented!" }; // eslint-disable-line no-constant-condition
-		const challenges = challengeFile[difficulty];
-		for(const challenge of challenges){
-
+	for(const challenge of challenges){
+		try {
 			const blob = new Blob([await fsPromise.readFile(challenge.src)]);
 			const fileName = challenge.src.split("/").pop();
 
@@ -197,23 +196,67 @@ async function syncChallengesToServer(){
 				body
 			});
 
-
-			// Send a message to renderer that this challenge was uploaded if 200 status was returned
 			if(response.status === 200){
-				// Remove challenge from json, move image to "uploaded" folder
+				const fileName = challenge.src.split("/").pop();
+				const uploadedPath = `./data/uploaded/${fileName}`;
+
+				// Remove challenge from json
+				const index = challengeFile[difficulty].findIndex((item) => item.src === challenge.src);
+				if(index !== -1) challengeFile[difficulty].splice(index, 1);
 
 
-				// TODO: IPC Main to Render this message
-				console.log({ code: 200, message: `${fileName} was uploaded successfully.` });
+				// Move the file to "uploaed" folder
+				if(!fs.existsSync("./data/uploaded/")) fs.mkdirSync("./data/uploaded/");
+				if(fs.existsSync(uploadedPath)) fs.unlinkSync(uploadedPath);
+				await fsPromise.rename(challenge.src, uploadedPath);
+
+				// Save the json
+				await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
+
+				successes += 1;
+				win.webContents.send("uploadStatus", { code: 200, message: `${fileName} was uploaded successfully.` });
+				continue;
 			}
 
-			// TODO: IPC Main to Render this message
-			console.log({ code: response.status, message: `${fileName} failed to upload.` });
+			win.webContents.send("uploadStatus", { code: 500, message: `${fileName} failed to upload.` });
+			continue;
+
+		} catch (e){
+			console.log(e);
+			win.webContents.send("uploadStatus", { code: 500, message: "Something went wrong with the request." });
+			continue;
 		}
+	}
+
+	return successes;
+}
+
+// Sync all challenges to the server
+async function syncChallengesToServer(){
+	const challengeCount = challengeFile["easy"].length + challengeFile["medium"].length + challengeFile["hard"].length + challengeFile["impossible"].length;
+	if(challengeCount === 0) return { code: 400, message: "No challenges were available to upload." };
+	const win = BrowserWindow.getAllWindows()[0];
+
+	let successes = 0;
+	console.log("Starting upload of easy...");
+	successes = await upload("easy", win, successes);
+
+	console.log("Starting upload of medium...");
+	successes = await upload("medium", win, successes);
+
+	console.log("Starting upload of hard...");
+	successes = await upload("hard", win, successes);
+
+	console.log("Starting upload of impossible...");
+	successes = await upload("impossible", win, successes);
+
+	await new Promise((resolve) => {
+		setTimeout(() => {
+			resolve();
+		}, 6000);
 	});
 
-
-	return { code: 501, message: "Not yet Implimented!" };
+	return { code: 200, message: `${successes}/${challengeCount} challenges were uploaded.` };
 }
 
 
@@ -228,6 +271,7 @@ const createWindow = () => {
 			preload: path.join(__dirname, 'preload.js')
 		}
 	});
+
 
 	win.loadFile(initialPage);
 	// win.setMenu(null); // This hides the file/edit/view/ menu bar at the top of the window
