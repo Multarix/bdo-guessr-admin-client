@@ -19,6 +19,8 @@ const originalDifficulty = document.getElementById("originalDifficulty");
 const statusContainer = document.getElementById("statusContainer");
 const statusMessage = document.getElementById("statusMessage");
 
+const logoutBtn = document.getElementById("logoutBtn");
+
 /* **************************** */
 /*                              */
 /*        Leaflet Setup         */
@@ -147,6 +149,8 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 
 	if(response.code === 200){
 		form.reset();
+		marker.remove();
+		marker = undefined;
 		displayStatusMessage(response);
 		refreshChallenges();
 
@@ -218,7 +222,7 @@ deleteBtn.addEventListener("click", async (evt) => {
 syncToServerBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
-	const confirmation = confirm("Are you sure you wish to sync to the server now? This action cannot be undone.");
+	const confirmation = confirm("Are you sure you wish to sync to the server now?\nThis action cannot be undone.");
 	if(!confirmation) return;
 
 	const syncText = document.getElementById("syncText");
@@ -228,6 +232,7 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	uploadFileBtn.disabled = true;
 	syncToServerBtn.disabled = true;
 	submitFormBtn.disabled = true;
+	logoutBtn.disabled = true;
 	syncText.style.display = "none";
 	syncLoad.style.display = "block";
 
@@ -238,8 +243,20 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	uploadFileBtn.disabled = false;
 	submitFormBtn.disabled = false;
 	syncToServerBtn.disabled = false;
+	logoutBtn.disabled = false;
 	syncText.style.display = "block";
 	syncLoad.style.display = "none";
+});
+
+logoutBtn.addEventListener("click", async (evt) => {
+	evt.preventDefault();
+
+	const confirmation = confirm("Are you sure you wish to logout?\nYou will need to login again afterwards.");
+	if(!confirmation) return;
+	const response = await window.electronAPI.setAuth("");
+
+	if(response.code === 200) return window.location.href = "./login.html";
+	displayStatusMessage(response);
 });
 
 
@@ -304,8 +321,9 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 		easy: "#00c000",
 		medium: "#ff8000",
 		hard: "#ff0000",
-		impossible: "#400040"
+		impossible: "#000000"
 	};
+
 
 	const circles = [];
 
@@ -313,13 +331,13 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 		const circle = L.circleMarker(item.actualLocation, {
 			color: "#000000",
 			fillColor: fillColor[difficulty],
-			fillOpacity: 0.75,
+			fillOpacity: (isHost) ? 0.5 : 1,
 			radius: 8,
 			weight: 1
 		});
-		circle.bindPopup(`<img class="imgPreview" src="${item.src}">`);
 
 		if(!isHost){
+			circle.bindPopup(`<img class="imgPreview" src="${item.src}">`);
 			circle.on("click", async (evt) => {
 				L.DomEvent.stopPropagation(evt);
 				circle.openPopup();

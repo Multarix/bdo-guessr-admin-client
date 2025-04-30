@@ -27,19 +27,20 @@ if(!fs.existsSync("./data/challenges.json")) fs.writeFileSync("./data/challenges
  * @property {ChallengeData[]} medium
  * @property {ChallengeData[]} hard
  * @property {ChallengeData[]} impossible
+ * @property {string} auth
  */
 
 /** @type {ChallengeFile} */
 const challengeFile = require("./data/challenges.json");
 
 
-// Set the auth required for uploading. Not yet implimented anywhere else.
-async function setAuth(auth){
+// Set the auth required for uploading.
+async function setAuth(_event, auth){
 	challengeFile.auth = auth;
 	try {
 		// Save the json
 		await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
-		return { code: 200, message: "Auth Set Successfully" };
+		return { code: 200, message: `Auth ${(auth) ? "Set" : "Unset"} Successfully` };
 	} catch (e){
 		console.log(e);
 		return { code: 500, message: "Something went wrong with the request." };
@@ -218,6 +219,8 @@ async function syncChallengesToServer(){
 
 // Create the browser window.
 const createWindow = () => {
+	const initialPage = (challengeFile.auth) ? "./index.html" : "./login.html";
+
 	const win = new BrowserWindow({
 		width: 1840,
 		height: 1035,
@@ -226,7 +229,7 @@ const createWindow = () => {
 		}
 	});
 
-	win.loadFile("index.html");
+	win.loadFile(initialPage);
 	// win.setMenu(null); // This hides the file/edit/view/ menu bar at the top of the window
 };
 
@@ -239,6 +242,7 @@ async function init(){
 		ipcMain.handle("updateChallenge", handleUpdateChallenge);
 		ipcMain.handle("deleteChallenge", handleDeleteChallenge);
 		ipcMain.handle("syncToServer", syncChallengesToServer);
+		ipcMain.handle("setAuth", setAuth);
 
 		createWindow();
 

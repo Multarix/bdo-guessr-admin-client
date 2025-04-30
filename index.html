@@ -4,7 +4,7 @@
 <head>
 	<meta http-equiv="Content-Security-Policy"
 		content="default-src 'self'; img-src 'self' data: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self' https://bdoguessr.moe/">
-	<title>Black Desert Map</title>
+	<title>BDO Guessr</title>
 	<link rel="stylesheet" href="./static/admin.css">
 
 	<link rel="stylesheet" href="./static/leaflet.css"
@@ -22,6 +22,7 @@
 		<div id="map"></div>
 		
 		<div id="syncContainer" class="syncContainer" style="display: none">
+			<button id="logoutBtn">Logout</button>
 			<button disabled id="syncToServer" class="syncToServer">
 				<span id="syncText">Sync</span>
 				<div style="display: none" id="syncLoad" class="loader"></div>
@@ -121,6 +122,7 @@
 						</div>
 					</div>
 				</div>
+				
 			</div><!-- end center-container -->
 		</div><!-- end controls -->
 	</div>

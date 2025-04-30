@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Security-Policy"
+			content="default-src 'self'; img-src 'self' data: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self'">
+		<title>BDO Guessr Login</title>
+		<link rel="stylesheet" href="./static/login.css">
+	
+		<script defer src="./static/login.mjs" type="module"></script>
+	</head>
+	
+	<body>
+		<div id="statusContainer">
+			<p id="statusMessage" class="statusMessage">Test Status Message</p>
+		</div>
+		<div class="formContainer">
+			<img src="./static/images/logo.png">
+			<form id="loginForm">
+				<input required type="text" name="username" id="username" placeholder="Username">
+				<input required type="password" name="password" id="password" placeholder="Password">
+				<input disabled type="submit" value="Login" id="login">
+			</form>
+		</div>
+	</body>
+</html>

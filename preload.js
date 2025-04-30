@@ -5,5 +5,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	submitForm: (formData) => ipcRenderer.invoke('submitForm', formData),
 	updateChallenge: (data) => ipcRenderer.invoke("updateChallenge", data),
 	deleteChallenge: (data) => ipcRenderer.invoke("deleteChallenge", data),
-	syncToServer: () => ipcRenderer.invoke("syncToServer")
+	syncToServer: () => ipcRenderer.invoke("syncToServer"),
+	setAuth: (auth) => ipcRenderer.invoke("setAuth", auth)
 });
