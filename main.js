@@ -47,14 +47,17 @@ const invertDifficultyFormat = {
 // TODO: Check with the server if auth is valid, otherwise return an error to the user
 // Set the auth required for uploading.
 async function setAuth(_event, auth){
-	/* const response = await fetch("https://beta.bdoguessr.moe/auth", {
-		method: "POST",
-		headers: {
-			"Authorization": `Basic ${auth}`
-		}
-	*/
+	// const response = await fetch("https://beta.bdoguessr.moe/auth", {
+	// 	method: "POST",
+	// 	headers: {
+	// 		"Authorization": `Basic ${auth}`
+	// 	}
+	// });
+
+	// if(response.status !== 200) return { code: 401, message: "Invalid username/ password." };
 
 	challengeFile.auth = auth;
+
 	try {
 		// Save the json
 		await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
