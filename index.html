@@ -3,7 +3,7 @@
 
 <head>
 	<meta http-equiv="Content-Security-Policy"
-		content="default-src 'self'; img-src 'self' data: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self' https://bdoguessr.moe/">
+		content="default-src 'self'; img-src 'self' https://bdoguessr.moe/ data: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self' https://bdoguessr.moe/">
 	<title>BDO Guessr</title>
 	<link rel="stylesheet" href="./static/admin.css">
 
@@ -41,15 +41,14 @@
 					<!-- Dropdown for updating difficulty -->
 					<select disabled id="infoDifficulty">
 						<option value="" selected disabled hidden></option>
-						<option value="easy">Easy</option>
-						<option value="medium">Medium</option>
-						<option value="hard">Hard</option>
-						<option value="impossible">Impossible</option>
+						<option value="1">Easy</option>
+						<option value="2">Medium</option>
+						<option value="3">Hard</option>
+						<option value="4">Impossible</option>
 					</select>
 					<input disabled type="text" id="infoHint" name="infoHint" placeholder="Challenge Hint">
 					<input disabled type="text" id="infoFact" name="infoFact" placeholder="Challenge Fact">
-					<input disabled type="text" id="originalDifficulty" name="originalDifficulty" style="display: none">
-					<input disabled type="hidden" id="imgPath" name="imgPath">
+					<input hidden type="checkbox" id="isHost" name="isHost">
 					<button disabled type="button" id="updateChallengeBtn">Update Challenge</button>
 					<button disabled type="button" id="deleteBtn" class="deleteBtn">Delete Challenge</button>
 				</div>
@@ -70,10 +69,10 @@
 					</div>
 					<select required="" id="uploadDifficulty" name="uploadDifficulty">
 						<option value="" selected disabled hidden>Select Difficulty</option>
-						<option value="easy">Easy</option>
-						<option value="medium">Medium</option>
-						<option value="hard">Hard</option>
-						<option value="impossible">Impossible</option>
+						<option value="1">Easy</option>
+						<option value="2">Medium</option>
+						<option value="3">Hard</option>
+						<option value="4">Impossible</option>
 					</select>
 					<input type="text" id="hint" name="hint" placeholder="Challenge Hint">
 					<input type="text" id="fact" name="fact" placeholder="Challenge Fact">
@@ -109,16 +108,16 @@
 					<label>Local Challenges</label>
 					<div>
 						<div class="stats" style="color:rgb(11,230,11)">
-							<span id="easyCountNew">0</span>
+							<span id="easyCountLocal">0</span>
 						</div>
 						<div class="stats" style="color:rgb(255,217,0)">
-							<span id="mediumCountNew">0</span>
+							<span id="mediumCountLocal">0</span>
 						</div>
 						<div class="stats" style="color:rgb(255,79,79)">
-							<span id="hardCountNew">0</span>
+							<span id="hardCountLocal">0</span>
 						</div>
 						<div class="stats" style="color:rgb(255,255,255)">
-							<span id="impossibleCountNew">0</span>
+							<span id="impossibleCountLocal">0</span>
 						</div>
 					</div>
 				</div>
