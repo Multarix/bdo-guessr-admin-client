@@ -32,10 +32,28 @@ if(!fs.existsSync("./data/challenges.json")) fs.writeFileSync("./data/challenges
 
 /** @type {ChallengeFile} */
 const challengeFile = require("./data/challenges.json");
+const invertDifficultyFormat = {
+	"easy": 		"1",
+	"medium":		"2",
+	"hard":			"3",
+	"impossible":	"4",
+	"1":			"easy",
+	"2":			"medium",
+	"3":			"hard",
+	"4":			"impossible"
+};
 
 
+// TODO: Check with the server if auth is valid, otherwise return an error to the user
 // Set the auth required for uploading.
 async function setAuth(_event, auth){
+	/* const response = await fetch("https://beta.bdoguessr.moe/auth", {
+		method: "POST",
+		headers: {
+			"Authorization": `Basic ${auth}`
+		}
+	*/
+
 	challengeFile.auth = auth;
 	try {
 		// Save the json
@@ -62,23 +80,27 @@ async function openFile(){
 	return null;
 }
 
-
-// Handle updating the difficulty
+// Handle updating the challenge
 async function handleUpdateChallenge(_event, data){
-	const { originalDiff, newDiff, imageFile } = data;
-	// console.log(data);
+	const oldDiff = invertDifficultyFormat[data.oldDifficulty];	// To String
+	const newDiff = invertDifficultyFormat[data.difficulty];	// To String
+
+	console.log(data);
 
 	// Make sure the challenge exists and all that jazz
-	const original = challengeFile[originalDiff].findIndex((item) => item.src === imageFile);
-	if(original === -1) return { code: 400, message: "That challenge seems to be missing." };
+	const original = challengeFile[oldDiff].findIndex((item) => item.src === data.src);
+	if(original === -1) return { code: 404, message: "That challenge seems to be missing." };
 
-	const newEntry = challengeFile[newDiff].findIndex((item) => item.src === imageFile);
-	if(newEntry !== -1) return { code: 400, message: "That challenge already exists in that difficulty." };
+	// Update the entry
+	challengeFile[oldDiff][original].fact = data.fact;
+	challengeFile[oldDiff][original].hint = data.hint;
+	challengeFile[oldDiff][original].difficulty = data.difficulty;
 
-	// Swap to the new entry.
-	const entry = challengeFile[originalDiff][original];
-	challengeFile[newDiff].push(entry);
-	challengeFile[originalDiff].splice(original, 1);
+	// If the difficulty changed, move the entry to the new difficulty
+	if(data.oldDifficulty !== data.difficulty){
+		challengeFile[newDiff].push(challengeFile[oldDiff][original]);
+		challengeFile[oldDiff].splice(original, 1);
+	}
 
 	try {
 		// Save the json
@@ -92,25 +114,24 @@ async function handleUpdateChallenge(_event, data){
 
 
 async function handleDeleteChallenge(_event, data){
-	const { difficulty, imageFile } = data;
-	// console.log(data);
-
 	// Make sure the challenge exists and all that jazz
-	const original = challengeFile[difficulty].findIndex((item) => item.src === imageFile);
-	if(original === -1) return { code: 400, message: "That challenge seems to be missing." };
+	const difficulty = invertDifficultyFormat[data.difficulty];
+	const original = challengeFile[difficulty].findIndex((item) => item.src === data.src);
+	if(original === -1) return { code: 404, message: "That challenge seems to be missing." };
 
 	// Delete the entry
 	challengeFile[difficulty].splice(original, 1);
 
 	// Move the file to "deleted" folder
-	const fileName = imageFile.split("/").pop();
+	const fileName = data.src.split("/").pop();
 	const deletedPath = `./data/deleted/${fileName}`;
 
 	try {
 		if(!fs.existsSync("./data/deleted/")) fs.mkdirSync("./data/deleted/");
 		if(fs.existsSync(deletedPath)) fs.unlinkSync(deletedPath);
+		if(!fs.existsSync(data.src)) return { code: 404, message: "The selected file seems to be missing." };
 
-		await fsPromise.rename(imageFile, deletedPath);
+		await fsPromise.rename(data.src, deletedPath);
 
 		// Save the json
 		await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
@@ -125,42 +146,34 @@ async function handleDeleteChallenge(_event, data){
 
 // Handle adding a new entry
 async function handleFormSubmission(_event, form){
-	const diffNumber = {
-		"easy": 1,
-		"medium": 2,
-		"hard": 3,
-		"impossible": 4
-	};
-	const { lat, lng, fact, hint, filePath, difficulty } = form;
-	// console.log(form);
-
 	// Make sure the data is set correctly
-	if(!["easy", "medium", "hard", "impossible"].includes(difficulty)) return { code: 400, message: "Difficulty should be 'easy', 'medium', 'hard' or 'impossible'." };
-	if(filePath === "") return { code: 400, response: "Screenshot should not be empty." };
+	if(!["1", "2", "3", "4"].includes(form.difficulty)) return { code: 400, message: "Difficulty should be 1, 2, 3 or 4" };
+	if(form.src === "") return { code: 400, response: "Screenshot should not be empty." };
 
 	try {
-		if(!fs.existsSync(filePath)) return { code: 400, message: "The selected file seems to be missing." };
-		const fileName = `./data/${filePath.split("\\").pop()}`;
+		if(!fs.existsSync(form.src)) return { code: 400, message: "The selected file seems to be missing." };
+		const newFileName = `./data/${form.src.split("\\").pop()}`;
 
 		// Copy and delete the old file (Janky but whatever)
-		await fsPromise.copyFile(filePath, fileName);
+		await fsPromise.copyFile(form.src, newFileName);
 		// await fsPromise.unlink(filePath);
 
 		const date = new Date;
 		const newChallenge = {
 			date: `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`,
-			src: fileName,
-			fact: fact,
-			hint: hint,
-			difficulty: diffNumber[difficulty],
+			src: newFileName,
+			fact: form.fact,
+			hint: form.hint,
+			difficulty: form.difficulty,
 			actualLocation: {
-				lat,
-				lng
+				lat: form.lat,
+				lng: form.lng
 			}
 		};
 
 		// Add new entry, save the json
-		challengeFile[difficulty].push(newChallenge);
+		const diff = invertDifficultyFormat[form.difficulty]; // Converts the number to word
+		challengeFile[diff].push(newChallenge);
 		await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
 
 		return { code: 200, message: "Challenge saved successfully." };

@@ -4,28 +4,45 @@
 const latInput = document.getElementById("lat");
 const lngInput = document.getElementById("lng");
 const uploadFileBtn = document.getElementById("screenshot");
-const challengefilePath = document.getElementById("filePath");
+
 const challengeFact = document.getElementById('hint');
 const challengeHint = document.getElementById('fact');
+const challengeFile = document.getElementById('filePath');
 const submitFormBtn = document.getElementById('submitForm');
 
-const syncToServerBtn = document.getElementById("syncToServer");
-const updateChallengeBtn = document.getElementById("updateChallengeBtn");
-const deleteBtn = document.getElementById("deleteBtn");
 const infoDifficulty = document.getElementById("infoDifficulty");
-const imgPath = document.getElementById("imgPath");
-const originalDifficulty = document.getElementById("originalDifficulty");
+const infoHint = document.getElementById("infoHint");
+const infoFact = document.getElementById("infoFact");
+const infoIsHost = document.getElementById("isHost");
+const updateChallengeBtn = document.getElementById("updateChallengeBtn");
+const deleteChallengeBtn = document.getElementById("deleteBtn");
 
 const statusContainer = document.getElementById("statusContainer");
 const statusMessage = document.getElementById("statusMessage");
 
+const syncToServerBtn = document.getElementById("syncToServer");
 const logoutBtn = document.getElementById("logoutBtn");
+
+let currentChallenge = null; // The current challenge we are looking at
+let activePopup = null; // The current popup we are looking at
+
+const convertDifficulty = {
+	"easy": 		"1",
+	"medium":		"2",
+	"hard":			"3",
+	"impossible":	"4",
+	"1":			"easy",
+	"2":			"medium",
+	"3":			"hard",
+	"4":			"impossible"
+};
 
 /* **************************** */
 /*                              */
 /*        Leaflet Setup         */
 /*                              */
 /* **************************** */
+
 
 // Setup the map
 const map = L.map('map', {
@@ -73,40 +90,27 @@ map.on("click", (ev) => {
 
 			latInput.value = latlng.lat;
 			lngInput.value = latlng.lng;
+
+			if(activePopup){
+				infoDifficulty.disabled = true;
+				infoHint.disabled = true;
+				infoFact.disabled = true;
+				deleteChallengeBtn.disabled = true;
+				updateChallengeBtn.disabled = true;
+				activePopup.closePopup();
+				activePopup = null; // Close the popup if we move the marker
+			}
 		});
 	}
 
 	marker.setLatLng(ev.latlng);
 });
 
-// Download all challanges from bdoguesser
-const host_overlays = await getHostChallenges();
 
-// Load new Locations from local file
-const new_challenges = await fetchAndConvertChallenges("./data/challenges.json");
-
-const new_overlays = {
-	"Easy": L.layerGroup(makeCircles(new_challenges.easy, "easy")),
-	"Medium": L.layerGroup(makeCircles(new_challenges.medium, "medium")),
-	"Hard": L.layerGroup(makeCircles(new_challenges.hard, "hard")),
-	"Impossible": L.layerGroup(makeCircles(new_challenges.impossible, "impossible"))
-};
-
-const new_counts = {
-	easy: new_challenges.easy.length,
-	medium: new_challenges.medium.length,
-	hard: new_challenges.hard.length,
-	impossible: new_challenges.impossible.length
-};
-
-let easyGroup = new_overlays.Easy.addTo(map);
-let mediumGroup = new_overlays.Medium.addTo(map);
-let hardGroup = new_overlays.Hard.addTo(map);
-let impossibleGroup = new_overlays.Impossible.addTo(map);
-
-const layerControl = L.control.layers(null, Object.assign(new_overlays, host_overlays.overlay)).addTo(map);
-updateCounts(new_counts, host_overlays.count);
-
+const hostChallenges = await refreshHostChallenges(true); // Get challangesfrom bdoguesser
+const localChallenges = await refreshLocalChallenges(true); // Get challenges from local file
+const layerControl = L.control.layers(null, Object.assign(localChallenges.overlay, hostChallenges.overlay)).addTo(map);
+updateCounts(localChallenges.count, hostChallenges.count);
 
 
 /* **************************** */
@@ -125,7 +129,6 @@ uploadFileBtn.addEventListener("click", async (evt) => {
 	document.getElementById("fileName").value = realPath.split("\\").pop();
 	document.getElementById("filePath").value = realPath;
 
-
 	submitFormBtn.disabled = false;
 });
 
@@ -141,7 +144,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 		lng: lngInput.value,
 		fact: challengeFact.value,
 		hint: challengeHint.value,
-		filePath: challengefilePath.value,
+		src: challengeFile.value,
 		difficulty: document.getElementById("uploadDifficulty").value
 	};
 
@@ -164,56 +167,59 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 updateChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
-	const screenshot = imgPath.value.split("/").pop();
-	const newDifficulty = infoDifficulty.value;
-	if(originalDifficulty.value === newDifficulty) return;
-	// TODO: update all the fields
+	if(!currentChallenge) return;
+	if(infoIsHost.checked) return;
 
 	const data = {
-		originalDiff: originalDifficulty.value,
-		newDiff: newDifficulty,
-		imageFile: `./data/${screenshot}`
+		difficulty: infoDifficulty.value,
+		oldDifficulty: currentChallenge.difficulty,
+		hint: infoHint.value,
+		fact: infoFact.value,
+		src: currentChallenge.src,
+		actualLocation: currentChallenge.actualLocation
 	};
 
 	const response = await window.electronAPI.updateChallenge(data);
 	displayStatusMessage(response);
 
 	if(response.code === 200){
-		originalDifficulty.value = newDifficulty;
-		await refreshLocalChallenges();
+		// Disable the buttons
+		infoDifficulty.disabled = true;
+		infoHint.disabled = true;
+		infoFact.disabled = true;
+		deleteChallengeBtn.disabled = true;
+		updateChallengeBtn.disabled = true;
+
+		if(!infoIsHost.checked) await refreshLocalChallenges();
+		if(infoIsHost.checked) await refreshHostChallenges();
 	}
 });
 
+
 // Delete Challenge
-deleteBtn.addEventListener("click", async (evt) => {
+deleteChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
+
+	if(!currentChallenge) return;
+	if(infoIsHost.checked) return;
 
 	// Ask user for confirmation
 	const confirmation = confirm("Are you sure you want to delete this challenge? This action cannot be undone.");
 	if(!confirmation) return;
 
-	const screenshot = imgPath.value.split("/").pop();
-
-	const data = {
-		difficulty: originalDifficulty.value,
-		imageFile: `./data/${screenshot}`
-	};
-
-	const response = await window.electronAPI.deleteChallenge(data);
+	const response = await window.electronAPI.deleteChallenge(currentChallenge);
 	displayStatusMessage(response);
 
 	if(response.code === 200){
 		// Disable the buttons
 		infoDifficulty.disabled = true;
-		deleteBtn.disabled = true;
+		deleteChallengeBtn.disabled = true;
 		updateChallengeBtn.disabled = true;
+		infoDifficulty.value = "";
+		infoHint.value = "";
+		infoFact.value = "";
 
 		await refreshLocalChallenges();
-
-		// Set the screenshot back to placeholder
-		imgPath.value = "";
-		originalDifficulty.value = "";
-		infoDifficulty.value = "";
 	}
 });
 
@@ -249,7 +255,7 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	syncLoad.style.display = "none";
 });
 
-// Logouts user out to login page
+// Logs out the user out to login page
 logoutBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
@@ -281,6 +287,7 @@ syncToServerBtn.disabled = false;
 
 function displayStatusMessage(response){
 	statusMessage.textContent = response.message;
+	console.log(response);
 	statusMessage.style.color = (response.code === 200) ? "#31ff00" : "#ff5858";
 	statusContainer.style.top = 0;
 	setTimeout(() => {
@@ -343,20 +350,41 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 			weight: 1
 		});
 
-		if(!isHost){
-			circle.bindPopup(`<img class="imgPreview" src="${item.src}">`);
-			circle.on("click", async (evt) => {
-				L.DomEvent.stopPropagation(evt);
-				circle.openPopup();
+		const popupOptions = {
+			"width": 400,
+			"maxWidth": 400,
+			"className": "imgPopup"
+		};
+		if(!isHost) circle.bindPopup(`<img class="imgPreview" src="${item.src}">`, popupOptions);
+		if(isHost) circle.bindPopup(`<img class="imgPreview" src="https://bdoguessr.moe/${item.src}">`, popupOptions);
 
-				originalDifficulty.value = difficulty;
-				infoDifficulty.value = difficulty;
-				imgPath.value = item.src;
+		circle.on("click", async (evt) => {
+			L.DomEvent.stopPropagation(evt);
+			circle.openPopup();
+			activePopup = circle;
+			currentChallenge = item;
+
+			infoDifficulty.value = convertDifficulty[difficulty];
+			infoHint.value = item.hint ?? "";
+			infoFact.value = item.fact ?? "";
+			infoIsHost.checked = isHost;
+
+			if(!isHost){
 				infoDifficulty.disabled = false;
-				deleteBtn.disabled = false;
+				infoHint.disabled = false;
+				infoFact.disabled = false;
+				deleteChallengeBtn.disabled = false;
 				updateChallengeBtn.disabled = false;
-			});
-		}
+			}
+
+			if(isHost){
+				infoDifficulty.disabled = true;
+				infoHint.disabled = true;
+				infoFact.disabled = true;
+				deleteChallengeBtn.disabled = true;
+				updateChallengeBtn.disabled = true;
+			}
+		});
 
 		circles.push(circle);
 	}
@@ -364,79 +392,94 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 	return circles;
 }
 
-async function getHostChallenges(){
-	const host_challenges = await fetchAndConvertChallenges("https://bdoguessr.moe/challenges.json");
-	// console.log(old_challenges);
+function updateCounts(localCount, hostCount){
+	document.getElementById("easyCount").textContent = localCount.easy + hostCount.easy;
+	document.getElementById("mediumCount").textContent = localCount.medium + hostCount.medium;
+	document.getElementById("hardCount").textContent = localCount.hard + hostCount.hard;
+	document.getElementById("impossibleCount").textContent = localCount.impossible + hostCount.impossible;
+	document.getElementById("easyCountLocal").textContent = localCount.easy;
+	document.getElementById("mediumCountLocal").textContent = localCount.medium;
+	document.getElementById("hardCountLocal").textContent = localCount.hard;
+	document.getElementById("impossibleCountLocal").textContent = localCount.impossible;
+}
 
-	const old_easy = makeCircles(host_challenges.easy, "easy", true);
-	const old_medium = makeCircles(host_challenges.medium, "medium", true);
-	const old_hard = makeCircles(host_challenges.hard, "hard", true);
-	const old_impossible = makeCircles(host_challenges.impossible, "impossible", true);
+async function refreshHostChallenges(controlLayer){
+	const challenges = await fetchAndConvertChallenges("https://bdoguessr.moe/challenges.json");
 
 	const overlays = {
-		"Host Easy": L.layerGroup(old_easy),
-		"Host Medium": L.layerGroup(old_medium),
-		"Host Hard": L.layerGroup(old_hard),
-		"Host Impossible": L.layerGroup(old_impossible)
+		"Host Easy": L.layerGroup(makeCircles(challenges.easy, "easy", true)),
+		"Host Medium": L.layerGroup(makeCircles(challenges.medium, "medium", true)),
+		"Host Hard": L.layerGroup(makeCircles(challenges.hard, "hard", true)),
+		"Host Impossible": L.layerGroup(makeCircles(challenges.impossible, "impossible", true))
 	};
 
 	const counts = {
-		easy: host_challenges.easy.length,
-		medium: host_challenges.medium.length,
-		hard: host_challenges.hard.length,
-		impossible: host_challenges.impossible.length
+		easy: challenges.easy.length,
+		medium: challenges.medium.length,
+		hard: challenges.hard.length,
+		impossible: challenges.impossible.length
 	};
 
-	return { overlay: overlays, count: counts };
+	if(!controlLayer){
+		layerControl.removeLayer(hostChallenges.easyGroup);
+		layerControl.removeLayer(hostChallenges.mediumGroup);
+		layerControl.removeLayer(hostChallenges.hardGroup);
+		layerControl.removeLayer(hostChallenges.impossibleGroup);
+
+		layerControl.addOverlay(hostChallenges.easyGroup, "Host Easy");
+		layerControl.addOverlay(hostChallenges.mediumGroup, "Host Medium");
+		layerControl.addOverlay(hostChallenges.hardGroup, "Host Hard");
+		layerControl.addOverlay(hostChallenges.impossibleGroup, "Host Impossible");
+
+		return updateCounts(localChallenges.count, counts);
+	}
+
+	return { overlay: overlays, count: counts, easyGroup: overlays["Host Easy"], mediumGroup: overlays["Host Medium"], hardGroup: overlays["Host Hard"], impossibleGroup: overlays["Host Impossible"] };
 }
 
-function updateCounts(new_counts, host_counts){
-	document.getElementById("easyCount").textContent = new_counts.easy + host_counts.easy;
-	document.getElementById("mediumCount").textContent = new_counts.medium + host_counts.medium;
-	document.getElementById("hardCount").textContent = new_counts.hard + host_counts.hard;
-	document.getElementById("impossibleCount").textContent = new_counts.impossible + host_counts.impossible;
-	document.getElementById("easyCountNew").textContent = new_counts.easy;
-	document.getElementById("mediumCountNew").textContent = new_counts.medium;
-	document.getElementById("hardCountNew").textContent = new_counts.hard;
-	document.getElementById("impossibleCountNew").textContent = new_counts.impossible;
-}
-
-async function refreshLocalChallenges(){
-	// Refresh the map icons
-	const refreshed_challenges = await fetchAndConvertChallenges("./data/challenges.json");
-	const refreshed_overlays = {
-		"Easy": L.layerGroup(makeCircles(refreshed_challenges.easy, "easy")),
-		"Medium": L.layerGroup(makeCircles(refreshed_challenges.medium, "medium")),
-		"Hard": L.layerGroup(makeCircles(refreshed_challenges.hard, "hard")),
-		"Impossible": L.layerGroup(makeCircles(refreshed_challenges.impossible, "impossible"))
+async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
+	const challenges = await fetchAndConvertChallenges("./data/challenges.json");
+	const overlays = {
+		"Easy": L.layerGroup(makeCircles(challenges.easy, "easy")),
+		"Medium": L.layerGroup(makeCircles(challenges.medium, "medium")),
+		"Hard": L.layerGroup(makeCircles(challenges.hard, "hard")),
+		"Impossible": L.layerGroup(makeCircles(challenges.impossible, "impossible"))
 	};
 
-	const refreshed_counts = {
-		easy: refreshed_challenges.easy.length,
-		medium: refreshed_challenges.medium.length,
-		hard: refreshed_challenges.hard.length,
-		impossible: refreshed_challenges.impossible.length
+	const counts = {
+		easy: challenges.easy.length,
+		medium: challenges.medium.length,
+		hard: challenges.hard.length,
+		impossible: challenges.impossible.length
 	};
 
-	layerControl.removeLayer(easyGroup);
-	map.removeLayer(easyGroup);
-	easyGroup = refreshed_overlays.Easy.addTo(map);
-	layerControl.addOverlay(easyGroup, "Easy");
+	if(!controlLayer){
+		layerControl.removeLayer(localChallenges.easyGroup);
+		layerControl.removeLayer(localChallenges.mediumGroup);
+		layerControl.removeLayer(localChallenges.hardGroup);
+		layerControl.removeLayer(localChallenges.impossibleGroup);
+		map.removeLayer(localChallenges.easyGroup);
+		map.removeLayer(localChallenges.mediumGroup);
+		map.removeLayer(localChallenges.hardGroup);
+		map.removeLayer(localChallenges.impossibleGroup);
 
-	layerControl.removeLayer(mediumGroup);
-	map.removeLayer(mediumGroup);
-	mediumGroup = refreshed_overlays.Medium.addTo(map);
-	layerControl.addOverlay(mediumGroup, "Medium");
+		localChallenges.easyGroup = overlays.Easy.addTo(map);
+		localChallenges.mediumGroup = overlays.Medium.addTo(map);
+		localChallenges.hardGroup = overlays.Hard.addTo(map);
+		localChallenges.impossibleGroup = overlays.Impossible.addTo(map);
 
-	layerControl.removeLayer(hardGroup);
-	map.removeLayer(hardGroup);
-	hardGroup = refreshed_overlays.Hard.addTo(map);
-	layerControl.addOverlay(hardGroup, "Hard");
+		layerControl.addOverlay(localChallenges.easyGroup, "Easy");
+		layerControl.addOverlay(localChallenges.mediumGroup, "Medium");
+		layerControl.addOverlay(localChallenges.hardGroup, "Hard");
+		layerControl.addOverlay(localChallenges.impossibleGroup, "Impossible");
 
-	layerControl.removeLayer(impossibleGroup);
-	map.removeLayer(impossibleGroup);
-	impossibleGroup = refreshed_overlays.Impossible.addTo(map);
-	layerControl.addOverlay(impossibleGroup, "Impossible");
+		return updateCounts(counts, hostChallenges.count);
+	}
 
-	updateCounts(refreshed_counts, host_overlays.count);
+	const easyGroup = overlays.Easy.addTo(map);
+	const mediumGroup = overlays.Medium.addTo(map);
+	const hardGroup = overlays.Hard.addTo(map);
+	const impossibleGroup = overlays.Impossible.addTo(map);
+
+	return { overlay: overlays, count: counts, easyGroup, mediumGroup, hardGroup, impossibleGroup };
 }
