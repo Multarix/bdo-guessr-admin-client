@@ -1,6 +1,6 @@
 tiles
 TileSplitter
-test.js
+test*js
 convert.js
 node_modules
 data
