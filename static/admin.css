@@ -10,11 +10,9 @@ body {
 .leaflet-control-attribution.leaflet-control {
 	display: none;
 }
-
 .leaflet-container {
 	cursor: unset !important;
 }
-
 .leaflet-interactive {
 	cursor: pointer !important;
 }
@@ -22,7 +20,7 @@ body {
 	margin: 5px 4px 0 5px !important;
 }
 .imgPreview {
-	width: 250px;
+	width: 350px;
 	border-radius: 8px;
 }
 .leaflet-popup-content-wrapper {
