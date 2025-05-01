@@ -5,13 +5,17 @@ const path = require('path');
 const fs = require("fs");
 const fsPromise = require("fs/promises");
 
-const saveLocation = app.getPath("userData");
+const saveLocation = path.join(app.getPath("documents"), "BDOGuessr/");
+if(!fs.existsSync(saveLocation)) fs.mkdirSync(saveLocation, { recursive: true });
+
 const challengesPath = path.join(saveLocation, "challenges.json");
 if(!fs.existsSync(challengesPath)) fs.writeFileSync(challengesPath, JSON.stringify({ "easy": [], "medium": [], "hard": [], "impossible": [], "auth": "" }, null, "\t"), { encoding: "utf8" });
 const challengeFile = require(challengesPath);
 
 const screenshotFolder = path.join(saveLocation, "screenshots/");
 if(!fs.existsSync(screenshotFolder)) fs.mkdirSync(screenshotFolder, { recursive: true });
+
+const bdoScreenshotFolder = path.join(app.getPath("documents"), "Black Desert/ScreenShot");
 
 /**
  * @typedef Latlng
@@ -22,8 +26,11 @@ if(!fs.existsSync(screenshotFolder)) fs.mkdirSync(screenshotFolder, { recursive:
 /**
  * @typedef ChallengeData
  * @property {string} date
+ * @property {string} hint
+ * @property {string} fact
  * @property {string} src
  * @property {Latlng} actualLocation
+ * @property {string|undefined} difficulty
 */
 
 /**
@@ -48,7 +55,6 @@ const invertDifficultyFormat = {
 };
 
 
-
 const getSaveLocation = () => saveLocation;
 const saveChallenges = async () => {
 	try {
@@ -66,7 +72,6 @@ const saveChallenges = async () => {
 /*           Set Auth           */
 /*                              */
 /* **************************** */
-
 
 async function setAuth(_event, auth){
 	// TODO: Check with the server if auth is valid, otherwise return an error to the user
@@ -94,13 +99,17 @@ async function setAuth(_event, auth){
 /* **************************** */
 
 async function openFile(){
-	const { canceled, filePaths } = await dialog.showOpenDialog({
+	const options = {
+		defaultPath: app.getPath("home"),
 		title: "Select an Image",
 		filters: [
 			{ name: "Images", extensions: ["png", "jpg", "bmp"] },
 			{ name: "All Files", extensions: ["*"] }
 		]
-	});
+	};
+
+	if(fs.existsSync(bdoScreenshotFolder)) options.defaultPath = bdoScreenshotFolder;
+	const { canceled, filePaths } = await dialog.showOpenDialog(options);
 
 	if(!canceled) return filePaths[0];
 	return null;
@@ -147,10 +156,6 @@ async function handleUpdateChallenge(_event, data){
 async function handleDeleteChallenge(_event, data){
 	// Make sure the challenge exists and all that jazz
 	const difficulty = invertDifficultyFormat[data.difficulty];
-
-	console.log(challengeFile);
-	console.log(data, difficulty);
-	console.log(challengeFile[difficulty]);
 
 	const original = challengeFile[difficulty].findIndex((item) => item.src === data.src);
 	if(original === -1) return { code: 404, message: "That challenge seems to be missing." };
