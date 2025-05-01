@@ -129,7 +129,9 @@ const convertDifficulty = {
 
 /** @type {string} */
 const saveLocation = await window.electronAPI.getSaveLocation();
-
+/** @type {string} */
+const authToken = await window.electronAPI.getAuth();
+if(!authToken) window.location.href = "./login.html"; // If we don't have an auth token, redirect to login page
 
 /** *****************************
  *                              *
@@ -265,7 +267,37 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
 	if(!currentChallenge) return;
-	if(infoIsHost.checked) return;
+	if(infoIsHost.checked){
+		const response = await fetch("https://bdoguessr.moe/update_difficulty", {
+			method: "POST",
+			headers: {
+				'Content-Type': 'application/json',
+				"Authorization": `basic ${authToken}`
+			},
+			body: JSON.stringify({
+				src: currentChallenge.src,
+				new_difficulty: infoDifficulty.value,
+				hint: infoHint.value,
+				fact: infoFact.value
+			})
+		});
+
+		const data = await response.json();
+		if(data.success){ // Successfully updated the challenge
+			displayStatusMessage({
+				code: 200,
+				message: "Successfully updated the challenge on the server."
+			});
+
+			return await refreshHostChallenges();
+		}
+
+		// Failed to update the challenge
+		return displayStatusMessage({
+			code: 500,
+			message: "Failed to update the challenge on the server."
+		});
+	};
 
 	const data = {
 		difficulty: infoDifficulty.value,
@@ -303,7 +335,9 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
 	if(!currentChallenge) return;
-	if(infoIsHost.checked) return;
+	if(infoIsHost.checked){
+		return;
+	};
 
 	// Ask user for confirmation
 	const confirmation = confirm("Are you sure you want to delete this challenge? This action cannot be undone.");
@@ -534,21 +568,12 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 			infoFact.value = item.fact ?? "";
 			infoIsHost.checked = isHost;
 
-			if(!isHost){
-				infoDifficulty.disabled = false;
-				infoHint.disabled = false;
-				infoFact.disabled = false;
-				deleteChallengeBtn.disabled = false;
-				updateChallengeBtn.disabled = false;
-			}
 
-			if(isHost){
-				infoDifficulty.disabled = true;
-				infoHint.disabled = true;
-				infoFact.disabled = true;
-				deleteChallengeBtn.disabled = true;
-				updateChallengeBtn.disabled = true;
-			}
+			infoDifficulty.disabled = false;
+			infoHint.disabled = false;
+			infoFact.disabled = false;
+			deleteChallengeBtn.disabled = false;
+			updateChallengeBtn.disabled = false;
 		});
 
 		circle.on("popupclose", () => {
@@ -598,7 +623,7 @@ function updateCounts(localCount, hostCount){
  ********************************
  * @name refreshHostChallenges
  * @param {boolean} controlLayer
- * @returns {ChallengeOverlayData}
+ * @returns {Promise<ChallengeOverlayData>}
  */
 async function refreshHostChallenges(controlLayer){
 	const challenges = await fetchAndConvertChallenges("https://bdoguessr.moe/challenges.json");
@@ -622,7 +647,15 @@ async function refreshHostChallenges(controlLayer){
 		layerControl.removeLayer(hostChallenges.mediumGroup);
 		layerControl.removeLayer(hostChallenges.hardGroup);
 		layerControl.removeLayer(hostChallenges.impossibleGroup);
+		map.removeLayer(hostChallenges.easyGroup);
+		map.removeLayer(hostChallenges.mediumGroup);
+		map.removeLayer(hostChallenges.hardGroup);
+		map.removeLayer(hostChallenges.impossibleGroup);
 
+		hostChallenges.easyGroup = overlays["Host Easy"].addTo(map);
+		hostChallenges.mediumGroup = overlays["Host Medium"].addTo(map);
+		hostChallenges.hardGroup = overlays["Host Hard"].addTo(map);
+		hostChallenges.impossibleGroup = overlays["Host Impossible"].addTo(map);
 		layerControl.addOverlay(hostChallenges.easyGroup, "Host Easy");
 		layerControl.addOverlay(hostChallenges.mediumGroup, "Host Medium");
 		layerControl.addOverlay(hostChallenges.hardGroup, "Host Hard");
@@ -631,7 +664,12 @@ async function refreshHostChallenges(controlLayer){
 		return updateCounts(localChallenges.count, counts);
 	}
 
-	return { overlay: overlays, count: counts, easyGroup: overlays["Host Easy"], mediumGroup: overlays["Host Medium"], hardGroup: overlays["Host Hard"], impossibleGroup: overlays["Host Impossible"] };
+	const easyGroup = overlays["Host Easy"].addTo(map);
+	const mediumGroup = overlays["Host Medium"].addTo(map);
+	const hardGroup = overlays["Host Hard"].addTo(map);
+	const impossibleGroup = overlays["Host Impossible"].addTo(map);
+
+	return { overlay: overlays, count: counts, easyGroup, mediumGroup, hardGroup, impossibleGroup };
 }
 
 
@@ -643,7 +681,7 @@ async function refreshHostChallenges(controlLayer){
  ********************************
  * @name refreshLocalChallenges
  * @param {boolean} controlLayer
- * @returns {ChallengeOverlayData}
+ * @returns {Promise<ChallengeOverlayData>}
  */
 async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 	const challenges = await fetchAndConvertChallenges(saveLocation + "/challenges.json");
@@ -675,7 +713,6 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 		localChallenges.mediumGroup = overlays.Medium.addTo(map);
 		localChallenges.hardGroup = overlays.Hard.addTo(map);
 		localChallenges.impossibleGroup = overlays.Impossible.addTo(map);
-
 		layerControl.addOverlay(localChallenges.easyGroup, "Easy");
 		layerControl.addOverlay(localChallenges.mediumGroup, "Medium");
 		layerControl.addOverlay(localChallenges.hardGroup, "Hard");
