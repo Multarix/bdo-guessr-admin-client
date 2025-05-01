@@ -55,6 +55,7 @@ const invertDifficultyFormat = {
 };
 
 
+const getAuth = () => challengeFile.auth;
 const getSaveLocation = () => saveLocation;
 const saveChallenges = async () => {
 	try {
@@ -369,6 +370,7 @@ async function init(){
 		ipcMain.handle("deleteChallenge", handleDeleteChallenge);
 		ipcMain.handle("syncToServer", syncChallengesToServer);
 		ipcMain.handle("setAuth", setAuth);
+		ipcMain.handle("getAuth", getAuth);
 
 		createWindow();
 
