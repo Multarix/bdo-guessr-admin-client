@@ -23,6 +23,8 @@ const statusMessage = document.getElementById("statusMessage");
 const syncToServerBtn = document.getElementById("syncToServer");
 const logoutBtn = document.getElementById("logoutBtn");
 
+const saveLocation = await window.electronAPI.getSaveLocation();
+
 let currentChallenge = null; // The current challenge we are looking at
 let activePopup = null; // The current popup we are looking at
 
@@ -92,11 +94,6 @@ map.on("click", (ev) => {
 			lngInput.value = latlng.lng;
 
 			if(activePopup){
-				infoDifficulty.disabled = true;
-				infoHint.disabled = true;
-				infoFact.disabled = true;
-				deleteChallengeBtn.disabled = true;
-				updateChallengeBtn.disabled = true;
 				activePopup.closePopup();
 				activePopup = null; // Close the popup if we move the marker
 			}
@@ -330,6 +327,8 @@ async function fetchAndConvertChallenges(url){
 	};
 }
 
+
+// Make the circles
 function makeCircles(difficultyArray, difficulty, isHost = false){
 	const fillColor = {
 		easy: "#00c000",
@@ -355,7 +354,7 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 			"maxWidth": 400,
 			"className": "imgPopup"
 		};
-		if(!isHost) circle.bindPopup(`<img class="imgPreview" src="${item.src}">`, popupOptions);
+		if(!isHost) circle.bindPopup(`<img class="imgPreview" src="${saveLocation}/screenshots/${item.src}">`, popupOptions);
 		if(isHost) circle.bindPopup(`<img class="imgPreview" src="https://bdoguessr.moe/${item.src}">`, popupOptions);
 
 		circle.on("click", async (evt) => {
@@ -386,12 +385,24 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 			}
 		});
 
+		circle.on("popupclose", () => {
+			infoDifficulty.disabled = true;
+			infoHint.disabled = true;
+			infoFact.disabled = true;
+			deleteChallengeBtn.disabled = true;
+			updateChallengeBtn.disabled = true;
+			activePopup = null;
+			currentChallenge = null;
+		});
+
 		circles.push(circle);
 	}
 
 	return circles;
 }
 
+
+// Update Counts
 function updateCounts(localCount, hostCount){
 	document.getElementById("easyCount").textContent = localCount.easy + hostCount.easy;
 	document.getElementById("mediumCount").textContent = localCount.medium + hostCount.medium;
@@ -438,7 +449,7 @@ async function refreshHostChallenges(controlLayer){
 }
 
 async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
-	const challenges = await fetchAndConvertChallenges("./data/challenges.json");
+	const challenges = await fetchAndConvertChallenges(saveLocation + "/challenges.json");
 	const overlays = {
 		"Easy": L.layerGroup(makeCircles(challenges.easy, "easy")),
 		"Medium": L.layerGroup(makeCircles(challenges.medium, "medium")),

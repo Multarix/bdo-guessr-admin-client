@@ -5,8 +5,13 @@ const path = require('path');
 const fs = require("fs");
 const fsPromise = require("fs/promises");
 
-if(!fs.existsSync("./data/")) fs.mkdirSync("./data/");
-if(!fs.existsSync("./data/challenges.json")) fs.writeFileSync("./data/challenges.json", JSON.stringify({ "easy": [], "medium": [], "hard": [], "impossible": [], "auth": "" }, null, "\t"), { encoding: "utf8" });
+const saveLocation = app.getPath("userData");
+const challengesPath = path.join(saveLocation, "challenges.json");
+if(!fs.existsSync(challengesPath)) fs.writeFileSync(challengesPath, JSON.stringify({ "easy": [], "medium": [], "hard": [], "impossible": [], "auth": "" }, null, "\t"), { encoding: "utf8" });
+const challengeFile = require(challengesPath);
+
+const screenshotFolder = path.join(saveLocation, "screenshots/");
+if(!fs.existsSync(screenshotFolder)) fs.mkdirSync(screenshotFolder, { recursive: true });
 
 /**
  * @typedef Latlng
@@ -31,7 +36,6 @@ if(!fs.existsSync("./data/challenges.json")) fs.writeFileSync("./data/challenges
  */
 
 /** @type {ChallengeFile} */
-const challengeFile = require("./data/challenges.json");
 const invertDifficultyFormat = {
 	"easy": 		"1",
 	"medium":		"2",
@@ -44,9 +48,28 @@ const invertDifficultyFormat = {
 };
 
 
-// TODO: Check with the server if auth is valid, otherwise return an error to the user
-// Set the auth required for uploading.
+
+const getSaveLocation = () => saveLocation;
+const saveChallenges = async () => {
+	try {
+		await fsPromise.writeFile(challengesPath, JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" }); // Save the json
+		return true;
+	} catch (e){
+		console.log(e);
+		return false;
+	}
+};
+
+
+/* **************************** */
+/*                              */
+/*           Set Auth           */
+/*                              */
+/* **************************** */
+
+
 async function setAuth(_event, auth){
+	// TODO: Check with the server if auth is valid, otherwise return an error to the user
 	// const response = await fetch("https://beta.bdoguessr.moe/auth", {
 	// 	method: "POST",
 	// 	headers: {
@@ -58,18 +81,18 @@ async function setAuth(_event, auth){
 
 	challengeFile.auth = auth;
 
-	try {
-		// Save the json
-		await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
-		return { code: 200, message: `Auth ${(auth) ? "Set" : "Unset"} Successfully` };
-	} catch (e){
-		console.log(e);
-		return { code: 500, message: "Something went wrong with the request." };
-	}
+	const saveSuccess = await saveChallenges();
+	if(saveSuccess) return { code: 200, message: "Auth set successfully." };
+	return { code: 500, message: "Something went wrong with the request." };
 }
 
 
-// Handle opening a file
+/* **************************** */
+/*                              */
+/*          Open File           */
+/*                              */
+/* **************************** */
+
 async function openFile(){
 	const { canceled, filePaths } = await dialog.showOpenDialog({
 		title: "Select an Image",
@@ -83,12 +106,16 @@ async function openFile(){
 	return null;
 }
 
-// Handle updating the challenge
+
+/* **************************** */
+/*                              */
+/*       Update Challenge       */
+/*                              */
+/* **************************** */
+
 async function handleUpdateChallenge(_event, data){
 	const oldDiff = invertDifficultyFormat[data.oldDifficulty];	// To String
 	const newDiff = invertDifficultyFormat[data.difficulty];	// To String
-
-	console.log(data);
 
 	// Make sure the challenge exists and all that jazz
 	const original = challengeFile[oldDiff].findIndex((item) => item.src === data.src);
@@ -105,20 +132,26 @@ async function handleUpdateChallenge(_event, data){
 		challengeFile[oldDiff].splice(original, 1);
 	}
 
-	try {
-		// Save the json
-		await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
-		return { code: 200, message: "Challenge updated successfully." };
-	} catch (e){
-		console.log(e);
-		return { code: 500, message: "Something went wrong with the request." };
-	}
+	const saveSuccess = await saveChallenges();
+	if(saveSuccess) return { code: 200, message: "Challenge updated successfully." };
+	return { code: 500, message: "Something went wrong with the request." };
 }
 
+
+/* **************************** */
+/*                              */
+/*       Delete Challenge       */
+/*                              */
+/* **************************** */
 
 async function handleDeleteChallenge(_event, data){
 	// Make sure the challenge exists and all that jazz
 	const difficulty = invertDifficultyFormat[data.difficulty];
+
+	console.log(challengeFile);
+	console.log(data, difficulty);
+	console.log(challengeFile[difficulty]);
+
 	const original = challengeFile[difficulty].findIndex((item) => item.src === data.src);
 	if(original === -1) return { code: 404, message: "That challenge seems to be missing." };
 
@@ -127,27 +160,33 @@ async function handleDeleteChallenge(_event, data){
 
 	// Move the file to "deleted" folder
 	const fileName = data.src.split("/").pop();
-	const deletedPath = `./data/deleted/${fileName}`;
+	const currentPath = path.join(screenshotFolder, fileName);
+	const deletedFolder = path.join(screenshotFolder, "deleted/");
+	const deletedPath = path.join(deletedFolder, fileName);
 
 	try {
-		if(!fs.existsSync("./data/deleted/")) fs.mkdirSync("./data/deleted/");
-		if(fs.existsSync(deletedPath)) fs.unlinkSync(deletedPath);
-		if(!fs.existsSync(data.src)) return { code: 404, message: "The selected file seems to be missing." };
+		if(!fs.existsSync(deletedFolder)) fs.mkdirSync(deletedFolder, { recursive: true });
+		if(fs.existsSync(deletedPath)) fs.unlinkSync(deletedPath);	// Delete the old file if it for some reason already exists
+		if(!fs.existsSync(currentPath)) return { code: 404, message: "The selected file seems to be missing." };
 
-		await fsPromise.rename(data.src, deletedPath);
-
-		// Save the json
-		await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
-		return { code: 200, message: "Challenge deleted successfully." };
+		await fsPromise.rename(currentPath, deletedPath);
 	} catch (e){
 		console.log(e);
 		return { code: 500, message: "Something went wrong with the request." };
 	}
 
+	const saveSuccess = await saveChallenges();
+	if(saveSuccess) return { code: 200, message: "Challenge deleted successfully." };
+	return { code: 500, message: "Something went wrong with the request." };
 }
 
 
-// Handle adding a new entry
+/* **************************** */
+/*                              */
+/*         Form Submit          */
+/*                              */
+/* **************************** */
+
 async function handleFormSubmission(_event, form){
 	// Make sure the data is set correctly
 	if(!["1", "2", "3", "4"].includes(form.difficulty)) return { code: 400, message: "Difficulty should be 1, 2, 3 or 4" };
@@ -155,16 +194,17 @@ async function handleFormSubmission(_event, form){
 
 	try {
 		if(!fs.existsSync(form.src)) return { code: 400, message: "The selected file seems to be missing." };
-		const newFileName = `./data/${form.src.split("\\").pop()}`;
+		const fileName = form.src.split("\\").pop();
+		const filePath = path.join(screenshotFolder, fileName);
 
 		// Copy and delete the old file (Janky but whatever)
-		await fsPromise.copyFile(form.src, newFileName);
+		await fsPromise.copyFile(form.src, filePath);
 		// await fsPromise.unlink(filePath);
 
 		const date = new Date;
 		const newChallenge = {
 			date: `${date.getUTCDate()}/${date.getUTCMonth() + 1}/${date.getUTCFullYear()}`,
-			src: newFileName,
+			src: fileName,
 			fact: form.fact,
 			hint: form.hint,
 			difficulty: form.difficulty,
@@ -174,17 +214,25 @@ async function handleFormSubmission(_event, form){
 			}
 		};
 
-		// Add new entry, save the json
+		// Add new entry
 		const diff = invertDifficultyFormat[form.difficulty]; // Converts the number to word
 		challengeFile[diff].push(newChallenge);
-		await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
-
-		return { code: 200, message: "Challenge saved successfully." };
 	} catch (e){
 		console.log(e);
 		return { code: 500, message: "Something went wrong with the request." };
 	}
+
+	const saveSuccess = await saveChallenges();
+	if(saveSuccess) return { code: 200, message: "Challenge added successfully." };
+	return { code: 500, message: "Something went wrong with the request." };
 }
+
+
+/* **************************** */
+/*                              */
+/*       Upload to Server       */
+/*                              */
+/* **************************** */
 
 async function upload(difficulty, win, successes){
 	/** @type {ChallengeData[]} */
@@ -247,7 +295,13 @@ async function upload(difficulty, win, successes){
 	return successes;
 }
 
-// Sync all challenges to the server
+
+/* **************************** */
+/*                              */
+/*        Sync to Server        */
+/*                              */
+/* **************************** */
+
 async function syncChallengesToServer(){
 	const challengeCount = challengeFile["easy"].length + challengeFile["medium"].length + challengeFile["hard"].length + challengeFile["impossible"].length;
 	if(challengeCount === 0) return { code: 400, message: "No challenges were available to upload." };
@@ -276,7 +330,13 @@ async function syncChallengesToServer(){
 }
 
 
-// Create the browser window.
+
+/* **************************** */
+/*                              */
+/*        Electron Setup        */
+/*                              */
+/* **************************** */
+
 const createWindow = () => {
 	const initialPage = (challengeFile.auth) ? "./index.html" : "./login.html";
 
@@ -297,6 +357,7 @@ const createWindow = () => {
 // Init Function
 async function init(){
 	app.whenReady().then(() => {
+		ipcMain.handle("getSaveLocation", getSaveLocation);
 		ipcMain.handle("openFile", openFile);
 		ipcMain.handle("submitForm", handleFormSubmission);
 		ipcMain.handle("updateChallenge", handleUpdateChallenge);
