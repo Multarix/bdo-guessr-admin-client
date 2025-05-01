@@ -5,3 +5,4 @@ convert.js
 node_modules
 data
 gen1
+out/
