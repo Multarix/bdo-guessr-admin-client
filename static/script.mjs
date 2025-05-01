@@ -1,31 +1,119 @@
 /* global L:readonly */
 /** @typedef {import("Leaflet")} L */
 
-const latInput = document.getElementById("lat");
-const lngInput = document.getElementById("lng");
-const uploadFileBtn = document.getElementById("screenshot");
+/**
+ * @typedef Latlng
+ * @property {string} lat
+ * @property {string} lng
+*/
 
+/**
+ * @typedef ElectronResponse
+ * @property {number} code
+ * @property {string} message
+*/
+
+/**
+ * @typedef ChallengeData
+ * @property {string} date
+ * @property {string} hint
+ * @property {string} fact
+ * @property {string} src
+ * @property {Latlng} actualLocation
+ * @property {string|undefined} difficulty
+*/
+
+/**
+ * @typedef ChallengeReponse
+ * @property {ChallengeData[]} easy
+ * @property {ChallengeData[]} medium
+ * @property {ChallengeData[]} hard
+ * @property {ChallengeData[]} impossible
+ */
+
+/**
+ * @typedef ChallengeFile
+ * @property {ChallengeData[]} easy
+ * @property {ChallengeData[]} medium
+ * @property {ChallengeData[]} hard
+ * @property {ChallengeData[]} impossible
+ * @property {string} auth
+ */
+
+/**
+ * @typedef ChallengeCounts
+ * @property {number} easy
+ * @property {number} medium
+ * @property {number} hard
+ * @property {number} impossible
+ */
+
+/**
+ * @typedef ChallengeOverlays
+ * @property {L.LayerGroup|undefined} Easy
+ * @property {L.LayerGroup|undefined} Medium
+ * @property {L.LayerGroup|undefined} Hard
+ * @property {L.LayerGroup|undefined} Impossible
+ * @property {L.LayerGroup|undefined} `Host Easy`
+ * @property {L.LayerGroup|undefined} `Host Medium`
+ * @property {L.LayerGroup|undefined} `Host Hard`
+ * @property {L.LayerGroup|undefined} `Host Impossible`
+*/
+
+/**
+ * @typedef {Object} ChallengeOverlayData
+ * @property {ChallengeOverlays} overlay
+ * @property {ChallengeCounts} count
+ * @property {L.LayerGroup} easyGroup
+ * @property {L.LayerGroup} mediumGroup
+ * @property {L.LayerGroup} hardGroup
+ * @property {L.LayerGroup} impossibleGroup
+ */
+
+// return { overlay: overlays, count: counts, easyGroup, mediumGroup, hardGroup, impossibleGroup };
+
+
+/** @type {HTMLInputElement} */
+const latInput = document.getElementById("lat");
+/** @type {HTMLInputElement} */
+const lngInput = document.getElementById("lng");
+/** @type {HTMLButtonElement} */
+const uploadFileBtn = document.getElementById("screenshot");
+/** @type {HTMLInputElement} */
 const challengeFact = document.getElementById('hint');
+/** @type {HTMLInputElement} */
 const challengeHint = document.getElementById('fact');
+/** @type {HTMLInputElement} */
 const challengeFile = document.getElementById('filePath');
+/** @type {HTMLButtonElement} */
 const submitFormBtn = document.getElementById('submitForm');
 
+/** @type {HTMLSelectElement} */
 const infoDifficulty = document.getElementById("infoDifficulty");
+/** @type {HTMLInputElement} */
 const infoHint = document.getElementById("infoHint");
+/** @type {HTMLInputElement} */
 const infoFact = document.getElementById("infoFact");
+/** @type {HTMLInputElement} */
 const infoIsHost = document.getElementById("isHost");
+/** @type {HTMLButtonElement} */
 const updateChallengeBtn = document.getElementById("updateChallengeBtn");
+/** @type {HTMLButtonElement} */
 const deleteChallengeBtn = document.getElementById("deleteBtn");
 
+/** @type {HTMLDivElement} */
 const statusContainer = document.getElementById("statusContainer");
+/** @type {HTMLParagraphElement} */
 const statusMessage = document.getElementById("statusMessage");
 
+/** @type {HTMLButtonElement} */
 const syncToServerBtn = document.getElementById("syncToServer");
+/** @type {HTMLButtonElement} */
 const logoutBtn = document.getElementById("logoutBtn");
 
-const saveLocation = await window.electronAPI.getSaveLocation();
-
+/** @type {null | ChallengeData} */
 let currentChallenge = null; // The current challenge we are looking at
+/** @type {null | L.CircleMarker} */
 let activePopup = null; // The current popup we are looking at
 
 const convertDifficulty = {
@@ -39,14 +127,15 @@ const convertDifficulty = {
 	"4":			"impossible"
 };
 
-/* **************************** */
-/*                              */
-/*        Leaflet Setup         */
-/*                              */
-/* **************************** */
+/** @type {string} */
+const saveLocation = await window.electronAPI.getSaveLocation();
 
 
-// Setup the map
+/** *****************************
+ *                              *
+ *        Leaflet Setup         *
+ *                              *
+ ***************************** **/
 const map = L.map('map', {
 	crs: L.CRS.Simple,
 	minZoom: 3,
@@ -93,9 +182,10 @@ map.on("click", (ev) => {
 			latInput.value = latlng.lat;
 			lngInput.value = latlng.lng;
 
+			// Close the popup if we move the marker
 			if(activePopup){
 				activePopup.closePopup();
-				activePopup = null; // Close the popup if we move the marker
+				activePopup = null;
 			}
 		});
 	}
@@ -110,16 +200,15 @@ const layerControl = L.control.layers(null, Object.assign(localChallenges.overla
 updateCounts(localChallenges.count, hostChallenges.count);
 
 
-/* **************************** */
-/*                              */
-/*       Event Listeners        */
-/*                              */
-/* **************************** */
-
-// Electron open file, cause we need it
+/** *****************************
+ *                              *
+ *          Open File           *
+ *                              *
+ ***************************** **/
 uploadFileBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
+	/** @type {string} */
 	const filePath = await window.electronAPI.openFile();
 	const realPath = (filePath) ? filePath : "";
 
@@ -129,7 +218,12 @@ uploadFileBtn.addEventListener("click", async (evt) => {
 	submitFormBtn.disabled = false;
 });
 
-// The upload form to update our local store & refresh our challenge markers
+
+/** *****************************
+ *                              *
+ *         Submit Form          *
+ *                              *
+ ***************************** **/
 document.getElementById("uploadForm").addEventListener("submit", async (evt) => {
 	evt.preventDefault();
 
@@ -145,6 +239,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 		difficulty: document.getElementById("uploadDifficulty").value
 	};
 
+	/** @type {ElectronResponse} */
 	const response = await window.electronAPI.submitForm(formData);
 
 	if(response.code === 200){
@@ -160,7 +255,12 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 	}
 });
 
-// Update Challenge
+
+/** *****************************
+ *                              *
+ *       Update Challenge       *
+ *                              *
+ ***************************** **/
 updateChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
@@ -176,6 +276,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 		actualLocation: currentChallenge.actualLocation
 	};
 
+	/** @type {ElectronResponse} */
 	const response = await window.electronAPI.updateChallenge(data);
 	displayStatusMessage(response);
 
@@ -193,7 +294,11 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 });
 
 
-// Delete Challenge
+/** *****************************
+ *                              *
+ *       Delete Challenge       *
+ *                              *
+ ***************************** **/
 deleteChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
@@ -204,6 +309,7 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 	const confirmation = confirm("Are you sure you want to delete this challenge? This action cannot be undone.");
 	if(!confirmation) return;
 
+	/** @type {ElectronResponse} */
 	const response = await window.electronAPI.deleteChallenge(currentChallenge);
 	displayStatusMessage(response);
 
@@ -221,7 +327,11 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 });
 
 
-// Sync to server button, sends all our local images to the server
+/** *****************************
+ *                              *
+ *        Sync to Server        *
+ *                              *
+ ***************************** **/
 syncToServerBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
@@ -239,6 +349,7 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	syncText.style.display = "none";
 	syncLoad.style.display = "block";
 
+	/** @type {ElectronResponse} */
 	const response = await window.electronAPI.syncToServer();
 	displayStatusMessage(response);
 	await refreshLocalChallenges();
@@ -252,12 +363,19 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	syncLoad.style.display = "none";
 });
 
-// Logs out the user out to login page
+
+/** *****************************
+ *                              *
+ *        Logout Button         *
+ *                              *
+ ***************************** **/
 logoutBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
 	const confirmation = confirm("Are you sure you wish to logout?\nYou will need to login again afterwards.");
 	if(!confirmation) return;
+
+	/** @type {ElectronResponse} */
 	const response = await window.electronAPI.setAuth("");
 
 	if(response.code === 200) return window.location.href = "./login.html";
@@ -276,12 +394,52 @@ syncToServerBtn.disabled = false;
 
 
 
-/* **************************** */
-/*                              */
-/*         Functions            */
-/*                              */
-/* **************************** */
+/**
+ ********************************
+ *                              *
+ *       Convert to Host        *
+ *                              *
+ ********************************
+ * @name convertToHostFormat
+ * @param {Latlng} obj
+ * @returns {Latlng}
+ */
+function convertToHostFormat(obj){
+	const realLat = (obj.lat * 128) / 32768;
+	const realLng = (obj.lng * 128) / 32768;
 
+	return { lat: realLat, lng: realLng };
+}
+
+
+/**
+ ********************************
+ *                              *
+ *       Convert to Local       *
+ *                              *
+ ********************************
+ * @name convertToLocalFormat
+ * @param {Latlng} obj
+ * @returns {Latlng}
+ */
+function convertToLocalFormat(obj){
+	const updatedLat = (obj.lat * 32768) / 128;
+	const updatedLng = (obj.lng * 32768) / 128;
+
+	return { lat: updatedLat, lng: updatedLng };
+}
+
+
+/**
+ ********************************
+ *                              *
+ *        Status Message        *
+ *                              *
+ ********************************
+ * @name displayStatusMessage
+ * @param {ElectronResponse} response
+ * @returns {void}
+ */
 function displayStatusMessage(response){
 	statusMessage.textContent = response.message;
 	console.log(response);
@@ -292,24 +450,21 @@ function displayStatusMessage(response){
 	}, 5000);
 }
 
-function convertToHostFormat(obj){
-	const realLat = (obj.lat * 128) / 32768;
-	const realLng = (obj.lng * 128) / 32768;
 
-	return { lat: realLat, lng: realLng };
-}
-
-function convertToLocalFormat(obj){
-	const updatedLat = (obj.lat * 32768) / 128;
-	const updatedLng = (obj.lng * 32768) / 128;
-
-	return { lat: updatedLat, lng: updatedLng };
-}
-
+/**
+ ********************************
+ *                              *
+ *       fetchChallenges        *
+ *                              *
+ ********************************
+ * @name fetchAndConvertChallenges
+ * @param {string} url
+ * @returns {Promise<ChallengeReponse>}
+ */
 async function fetchAndConvertChallenges(url){
 	const response = await fetch(url);
 	const challenges = await response.json();
-	if(url.startsWith(".") && challenges.auth) document.getElementById("syncContainer").style.display = "";
+	if(!url.startsWith("https://") && challenges.auth) document.getElementById("syncContainer").style.display = "";
 
 	const { easy, medium, hard, impossible } = challenges;
 	for(const difficulty of [easy, medium, hard, impossible]){
@@ -328,7 +483,18 @@ async function fetchAndConvertChallenges(url){
 }
 
 
-// Make the circles
+/**
+ ********************************
+ *                              *
+ *         Make Circles         *
+ *                              *
+ ********************************
+ * @name makeCircles
+ * @param {ChallengeData[]} difficultyArray
+ * @param {"1"|"2"|"3"|"4"} difficulty
+ * @param {boolean} isHost
+ * @returns {L.CircleMarker[]}
+ */
 function makeCircles(difficultyArray, difficulty, isHost = false){
 	const fillColor = {
 		easy: "#00c000",
@@ -402,7 +568,16 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 }
 
 
-// Update Counts
+/**
+ ********************************
+ *                              *
+ *        Update Counts         *
+ *                              *
+ ********************************
+ * @name updateCounts
+ * @param {boolean} controlLayer
+ * @returns {void}
+ */
 function updateCounts(localCount, hostCount){
 	document.getElementById("easyCount").textContent = localCount.easy + hostCount.easy;
 	document.getElementById("mediumCount").textContent = localCount.medium + hostCount.medium;
@@ -414,6 +589,17 @@ function updateCounts(localCount, hostCount){
 	document.getElementById("impossibleCountLocal").textContent = localCount.impossible;
 }
 
+
+/**
+ ********************************
+ *                              *
+ *       Host Challenges        *
+ *                              *
+ ********************************
+ * @name refreshHostChallenges
+ * @param {boolean} controlLayer
+ * @returns {ChallengeOverlayData}
+ */
 async function refreshHostChallenges(controlLayer){
 	const challenges = await fetchAndConvertChallenges("https://bdoguessr.moe/challenges.json");
 
@@ -448,6 +634,17 @@ async function refreshHostChallenges(controlLayer){
 	return { overlay: overlays, count: counts, easyGroup: overlays["Host Easy"], mediumGroup: overlays["Host Medium"], hardGroup: overlays["Host Hard"], impossibleGroup: overlays["Host Impossible"] };
 }
 
+
+/**
+ ********************************
+ *                              *
+ *       Local Challenges       *
+ *                              *
+ ********************************
+ * @name refreshLocalChallenges
+ * @param {boolean} controlLayer
+ * @returns {ChallengeOverlayData}
+ */
 async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 	const challenges = await fetchAndConvertChallenges(saveLocation + "/challenges.json");
 	const overlays = {
