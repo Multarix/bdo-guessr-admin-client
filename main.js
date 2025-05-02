@@ -212,7 +212,7 @@ async function handleFormSubmission(_event, form){
 
 		// Copy and delete the old file (Janky but whatever)
 		await fsPromise.copyFile(form.src, filePath);
-		// await fsPromise.unlink(filePath);
+		await fsPromise.unlink(filePath);
 
 		const date = new Date;
 		const newChallenge = {
