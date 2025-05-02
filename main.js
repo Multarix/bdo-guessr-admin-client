@@ -211,8 +211,6 @@ async function handleFormSubmission(_event, form){
 		const fileName = form.src.split("\\").pop();
 		const filePath = path.join(screenshotFolder, fileName);
 
-		console.log(form.src);
-
 		// Copy and delete the old file (Janky but whatever)
 		await fsPromise.copyFile(form.src, filePath);
 		await fsPromise.unlink(form.src);
