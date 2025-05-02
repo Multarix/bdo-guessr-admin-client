@@ -9,6 +9,7 @@
 	--ui-border-style: 2px solid rgb(163, 163, 163);
 	--button-negative: #f44336;
 	--button-negative-hover: #d32f2f;
+	--screenshot-width: 600px;
 }
 
 body {
@@ -31,7 +32,7 @@ body {
 	margin: 5px 4px 0 5px !important;
 }
 .imgPreview {
-	width: 350px;
+	width: var(--screenshot-width);
 	border-radius: 8px;
 }
 .leaflet-popup-content-wrapper {

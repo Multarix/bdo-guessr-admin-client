@@ -704,8 +704,7 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 		});
 
 		const popupOptions = {
-			"width": 400,
-			"maxWidth": 400,
+			"maxWidth": 600,
 			"className": "imgPopup"
 		};
 		if(!isHost) circle.bindPopup(`<img class="imgPreview" src="${saveLocation}/screenshots/${item.src}">`, popupOptions);
