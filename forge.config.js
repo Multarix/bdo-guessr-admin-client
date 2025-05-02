@@ -4,7 +4,7 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
 	packagerConfig: {
 		asar: true,
-		name: "BDO Guessr Admin",
+		name: "BDOGuessr_Admin",
 		icon: "./icon",
 		ignore: "^/data"
 	},
@@ -13,7 +13,7 @@ module.exports = {
 		{
 			name: '@electron-forge/maker-squirrel',
 			config: {
-				description: 'BDOGuessr Admin Client',
+				description: 'BDOGuessr admin client',
 				shortName: 'BDOGuessr',
 				version: '1.0.0'
 			}
@@ -21,7 +21,7 @@ module.exports = {
 		{
 			name: '@electron-forge/maker-zip',
 			config: {
-				description: 'BDOGuessr Admin Client',
+				description: 'BDOGuessr admin client',
 				shortName: 'BDOGuessr',
 				version: '1.0.0'
 			}
@@ -29,7 +29,7 @@ module.exports = {
 		{
 			name: '@electron-forge/maker-deb',
 			config: {
-				description: 'BDOGuessr Admin Client',
+				description: 'BDOGuessr admin client',
 				shortName: 'BDOGuessr',
 				version: '1.0.0'
 			}
@@ -37,7 +37,7 @@ module.exports = {
 		{
 			name: '@electron-forge/maker-rpm',
 			config: {
-				description: 'BDOGuessr Admin Client',
+				description: 'BDOGuessr admin client',
 				shortName: 'BDOGuessr',
 				version: '1.0.0'
 			}
