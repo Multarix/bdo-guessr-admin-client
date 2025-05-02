@@ -280,25 +280,24 @@ async function upload(difficulty, win, successes){
 			});
 
 			if(response.status === 200){
-				const fileName = challenge.src.split("/").pop();
-				const uploadedPath = `./data/uploaded/${fileName}`;
+				const uploadedFolder = path.join(screenshotFolder, "uploaded/");
+				const uploadedPath = path.join(uploadedFolder, fileName);
 
 				// Remove challenge from json
 				const index = challengeFile[difficulty].findIndex((item) => item.src === challenge.src);
 				if(index !== -1) challengeFile[difficulty].splice(index, 1);
 
-
 				// Move the file to "uploaed" folder
-				if(!fs.existsSync("./data/uploaded/")) fs.mkdirSync("./data/uploaded/");
+				if(!fs.existsSync(uploadedFolder)) fs.mkdirSync(uploadedFolder);
 				if(fs.existsSync(uploadedPath)) fs.unlinkSync(uploadedPath);
 				await fsPromise.rename(screenshotLocation, uploadedPath);
 
 				// Save the json
-				await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
-
+				const saveSuccess = await saveChallenges();
+				if(saveSuccess) win.webContents.send("uploadStatus", { code: 200, message: `${fileName} was uploaded successfully.` });
 				successes += 1;
-				win.webContents.send("uploadStatus", { code: 200, message: `${fileName} was uploaded successfully.` });
-				continue;
+
+				continue; // Go to next iteration
 			}
 
 			win.webContents.send("uploadStatus", { code: 500, message: `${fileName} failed to upload.` });
