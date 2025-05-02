@@ -205,14 +205,17 @@ async function handleFormSubmission(_event, form){
 	if(!["1", "2", "3", "4"].includes(form.difficulty)) return { code: 400, message: "Difficulty should be 1, 2, 3 or 4" };
 	if(form.src === "") return { code: 400, response: "Screenshot should not be empty." };
 
+
 	try {
 		if(!fs.existsSync(form.src)) return { code: 400, message: "The selected file seems to be missing." };
 		const fileName = form.src.split("\\").pop();
 		const filePath = path.join(screenshotFolder, fileName);
 
+		console.log(form.src);
+
 		// Copy and delete the old file (Janky but whatever)
 		await fsPromise.copyFile(form.src, filePath);
-		await fsPromise.unlink(filePath);
+		await fsPromise.unlink(form.src);
 
 		const date = new Date;
 		const newChallenge = {
