@@ -296,6 +296,8 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
 	if(!currentChallenge) return;
+
+	// Host Update
 	if(infoIsHost.checked){
 		const response = await fetch("https://bdoguessr.moe/update_difficulty", {
 			method: "POST",
@@ -314,6 +316,23 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 
 		const data = await response.json();
 		if(data.success){ // Successfully updated the challenge
+			infoDifficulty.disabled = true;
+			infoHint.disabled = true;
+			infoFact.disabled = true;
+			infoTagInput.disabled = true;
+			updateChallengeBtn.disabled = true;
+			deleteChallengeBtn.disabled = true;
+
+			// Clear the Info
+			infoTagContainer.replaceChildren();
+			infoTagInput.value = "";
+			infoHint.value = "";
+			infoFact.value = "";
+			infoDifficulty.value = "";
+			updateTags.splice(0, updateTags.length);
+			activePopup = null;
+			currentChallenge = null;
+
 			displayStatusMessage({
 				code: 200,
 				message: "Successfully updated the challenge on the server."
@@ -344,15 +363,24 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 	displayStatusMessage(response);
 
 	if(response.code === 200){
-		// Disable the buttons
 		infoDifficulty.disabled = true;
 		infoHint.disabled = true;
 		infoFact.disabled = true;
-		deleteChallengeBtn.disabled = true;
+		infoTagInput.disabled = true;
 		updateChallengeBtn.disabled = true;
+		deleteChallengeBtn.disabled = true;
 
-		if(!infoIsHost.checked) await refreshLocalChallenges();
-		if(infoIsHost.checked) await refreshHostChallenges();
+		// Clear the Info
+		infoTagContainer.replaceChildren();
+		infoTagInput.value = "";
+		infoHint.value = "";
+		infoFact.value = "";
+		infoDifficulty.value = "";
+		updateTags.splice(0, updateTags.length);
+		activePopup = null;
+		currentChallenge = null;
+
+		await refreshLocalChallenges();
 	}
 });
 
@@ -366,27 +394,81 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
 
 	if(!currentChallenge) return;
-	if(infoIsHost.checked){
-		return;
-	};
 
 	// Ask user for confirmation
 	const confirmation = confirm("Are you sure you want to delete this challenge? This action cannot be undone.");
 	if(!confirmation) return;
 
+	// Host delete
+	if(infoIsHost.checked){
+		const response = await fetch("https://bdoguessr.moe/delete_challenge", {
+			method: "POST",
+			headers: {
+				'Content-Type': 'application/json',
+				"Authorization": `basic ${authToken}`
+			},
+			body: JSON.stringify({
+				src: currentChallenge.src
+			})
+		});
+
+		const data = await response.json();
+		if(data.success){ // Successfully deleted the challenge
+			infoDifficulty.disabled = true;
+			infoHint.disabled = true;
+			infoFact.disabled = true;
+			infoTagInput.disabled = true;
+			updateChallengeBtn.disabled = true;
+			deleteChallengeBtn.disabled = true;
+
+			// Clear the Info
+			infoTagContainer.replaceChildren();
+			infoTagInput.value = "";
+			infoHint.value = "";
+			infoFact.value = "";
+			infoDifficulty.value = "";
+			updateTags.splice(0, updateTags.length);
+			activePopup = null;
+			currentChallenge = null;
+
+			displayStatusMessage({
+				code: 200,
+				message: "Successfully deleted the challenge from the server."
+			});
+
+			return await refreshHostChallenges();
+		}
+
+		// Failed to update the challenge
+		return displayStatusMessage({
+			code: 500,
+			message: "Failed to delete the challenge from the server."
+		});
+	};
+
+	// Local delete
 	/** @type {ElectronResponse} */
 	const response = await window.electronAPI.deleteChallenge(currentChallenge);
-	displayStatusMessage(response);
 
 	if(response.code === 200){
-		// Disable the buttons
 		infoDifficulty.disabled = true;
-		deleteChallengeBtn.disabled = true;
+		infoHint.disabled = true;
+		infoFact.disabled = true;
+		infoTagInput.disabled = true;
 		updateChallengeBtn.disabled = true;
-		infoDifficulty.value = "";
+		deleteChallengeBtn.disabled = true;
+
+		// Clear the Info
+		infoTagContainer.replaceChildren();
+		infoTagInput.value = "";
 		infoHint.value = "";
 		infoFact.value = "";
+		infoDifficulty.value = "";
+		updateTags.splice(0, updateTags.length);
+		activePopup = null;
+		currentChallenge = null;
 
+		displayStatusMessage(response);
 		await refreshLocalChallenges();
 	}
 });
@@ -720,8 +802,8 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 			infoHint.disabled = true;
 			infoFact.disabled = true;
 			infoTagInput.disabled = true;
-			deleteChallengeBtn.disabled = true;
 			updateChallengeBtn.disabled = true;
+			deleteChallengeBtn.disabled = true;
 
 			// Clear the Info
 			infoTagContainer.replaceChildren();
