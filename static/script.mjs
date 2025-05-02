@@ -72,28 +72,39 @@
 
 // return { overlay: overlays, count: counts, easyGroup, mediumGroup, hardGroup, impossibleGroup };
 
-
+// Challenge Adding
 /** @type {HTMLInputElement} */
 const latInput = document.getElementById("lat");
 /** @type {HTMLInputElement} */
 const lngInput = document.getElementById("lng");
-/** @type {HTMLButtonElement} */
-const uploadFileBtn = document.getElementById("screenshot");
+/** @type {HTMLSelectElement} */
+const uploadDifficulty = document.getElementById("uploadDifficulty");
 /** @type {HTMLInputElement} */
 const challengeFact = document.getElementById('hint');
 /** @type {HTMLInputElement} */
 const challengeHint = document.getElementById('fact');
+/** @type {HTMLDivElement} */
+const tagContainer = document.getElementById("tagContainer");
+/** @type {HTMLInputElement} */
+const tagInput = document.getElementById("tagInput");
+/** @type {HTMLButtonElement} */
+const uploadFileBtn = document.getElementById("screenshot");
 /** @type {HTMLInputElement} */
 const challengeFile = document.getElementById('filePath');
 /** @type {HTMLButtonElement} */
 const submitFormBtn = document.getElementById('submitForm');
 
+// Challenge Editing
 /** @type {HTMLSelectElement} */
 const infoDifficulty = document.getElementById("infoDifficulty");
 /** @type {HTMLInputElement} */
 const infoHint = document.getElementById("infoHint");
 /** @type {HTMLInputElement} */
 const infoFact = document.getElementById("infoFact");
+/** @type {HTMLDivElement} */
+const infoTagContainer = document.getElementById("infoTagContainer");
+/** @type {HTMLInputElement} */
+const infoTagInput = document.getElementById("infoTagInput");
 /** @type {HTMLInputElement} */
 const infoIsHost = document.getElementById("isHost");
 /** @type {HTMLButtonElement} */
@@ -111,10 +122,15 @@ const syncToServerBtn = document.getElementById("syncToServer");
 /** @type {HTMLButtonElement} */
 const logoutBtn = document.getElementById("logoutBtn");
 
-/** @type {null | ChallengeData} */
-let currentChallenge = null; // The current challenge we are looking at
 /** @type {null | L.CircleMarker} */
 let activePopup = null; // The current popup we are looking at
+/** @type {null | ChallengeData} */
+let currentChallenge = null; // The current challenge we are looking at
+
+/** @type {string[]} */
+const updateTags = [];
+/** @type {string[]} */
+const submitTags = [];
 
 const convertDifficulty = {
 	"easy": 		"1",
@@ -181,8 +197,9 @@ map.on("click", (ev) => {
 		marker.on("move", (n) => {
 			const latlng = convertToHostFormat(n.latlng);
 
-			latInput.value = latlng.lat;
-			lngInput.value = latlng.lng;
+
+			latInput.value = Math.min(Math.max(latlng.lat, -1), 0);
+			lngInput.value = Math.min(Math.max(latlng.lng, 0), 1);
 
 			// Close the popup if we move the marker
 			if(activePopup){
@@ -237,6 +254,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 		lng: lngInput.value,
 		fact: challengeFact.value,
 		hint: challengeHint.value,
+		tags: submitTags,
 		src: challengeFile.value,
 		difficulty: document.getElementById("uploadDifficulty").value
 	};
@@ -246,6 +264,17 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 
 	if(response.code === 200){
 		form.reset();
+		submitTags.slice(0, submitTags.length); // Clear the tags
+		tagContainer.replaceChildren(); // Clear the tag container
+
+		latInput.disabled = false;
+		lngInput.disabled = false;
+		uploadDifficulty.disabled = false;
+		challengeHint.disabled = false;
+		challengeFact.disabled = false;
+		tagInput.disabled = false;
+		uploadFileBtn.disabled = false;
+
 		marker.remove();
 		marker = undefined;
 		displayStatusMessage(response);
@@ -277,6 +306,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 			body: JSON.stringify({
 				src: currentChallenge.src,
 				new_difficulty: infoDifficulty.value,
+				tags: updateTags,
 				hint: infoHint.value,
 				fact: infoFact.value
 			})
@@ -304,6 +334,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 		oldDifficulty: currentChallenge.difficulty,
 		hint: infoHint.value,
 		fact: infoFact.value,
+		tags: updateTags,
 		src: currentChallenge.src,
 		actualLocation: currentChallenge.actualLocation
 	};
@@ -377,7 +408,6 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 
 	syncToServerBtn.disabled = true;
 	uploadFileBtn.disabled = true;
-	syncToServerBtn.disabled = true;
 	submitFormBtn.disabled = true;
 	logoutBtn.disabled = true;
 	syncText.style.display = "none";
@@ -391,7 +421,6 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	syncToServerBtn.disabled = false;
 	uploadFileBtn.disabled = false;
 	submitFormBtn.disabled = false;
-	syncToServerBtn.disabled = false;
 	logoutBtn.disabled = false;
 	syncText.style.display = "block";
 	syncLoad.style.display = "none";
@@ -422,8 +451,98 @@ window.electronAPI.onUpdateStatus((response) => {
 });
 
 
+/** *****************************
+ *                              *
+ *         Initial Tags         *
+ *                              *
+ ***************************** **/
+tagInput.addEventListener("keypress", (evt) => {
+	if(evt.key === "Enter") evt.preventDefault();
+	const allowedCharacters = /[a-zA-Z]/;
+	if(!allowedCharacters.test(evt.key) && evt.key !== "Backspace" && evt.key !== "Enter" && evt.key !== " ") return evt.preventDefault();
+
+	const cleaned = tagInput.value.trim().toLowerCase();
+	if(evt.key === "Enter" && cleaned.length > 0 || evt.key === " " && cleaned.length > 0){
+		tagInput.value = "";
+
+		if(!submitTags.includes(cleaned)){
+			submitTags.push(cleaned);
+
+			const tag = document.createElement("span");
+			tag.classList.add("tag");
+			tag.textContent = cleaned;
+
+			// On click, remove the tag
+			tag.addEventListener("click", () => {
+				submitTags.splice(submitTags.indexOf(cleaned), 1);
+				tag.remove();
+			});
+
+			tagContainer.appendChild(tag);
+		}
+	}
+});
+
+
+/** *****************************
+ *                              *
+ *     Edit Challenge Tags      *
+ *                              *
+ ***************************** **/
+infoTagInput.addEventListener("keypress", (evt) => {
+	if(evt.key === "Enter") evt.preventDefault();
+	const allowedCharacters = /[a-zA-Z]/;
+	if(!allowedCharacters.test(evt.key) && evt.key !== "Backspace" && evt.key !== "Enter" && evt.key !== " ") return evt.preventDefault();
+
+	const cleaned = infoTagInput.value.trim().toLowerCase();
+	if(evt.key === "Enter" && cleaned.length > 0 || evt.key === " " && cleaned.length > 0){
+		infoTagInput.value = "";
+
+		if(!submitTags.includes(cleaned)){
+			submitTags.push(cleaned);
+
+			const tag = document.createElement("span");
+			tag.classList.add("tag");
+			tag.textContent = cleaned;
+
+			// On click, remove the tag
+			tag.addEventListener("click", () => {
+				submitTags.splice(submitTags.indexOf(cleaned), 1);
+				tag.remove();
+			});
+
+			infoTagContainer.appendChild(tag);
+		}
+	}
+});
+
+// Prevent Enter from opening the "browse" dialog
+challengeHint.addEventListener("keypress", (evt) => {
+	if(evt.key === "Enter") evt.preventDefault();
+});
+
+challengeFact.addEventListener("keypress", (evt) => {
+	if(evt.key === "Enter") evt.preventDefault();
+});
+
+latInput.addEventListener("keypress", (evt) => {
+	if(evt.key === "Enter") evt.preventDefault();
+});
+
+lngInput.addEventListener("keypress", (evt) => {
+	if(evt.key === "Enter") evt.preventDefault();
+});
+
+
 // Enable the buttons after all the event listeners have been added.
+latInput.disabled = false;
+lngInput.disabled = false;
+uploadDifficulty.disabled = false;
+challengeHint.disabled = false;
+challengeFact.disabled = false;
+tagInput.disabled = false;
 uploadFileBtn.disabled = false;
+
 syncToServerBtn.disabled = false;
 
 
@@ -537,7 +656,6 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 		impossible: "#000000"
 	};
 
-
 	const circles = [];
 
 	for(const item of difficultyArray){
@@ -568,10 +686,31 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 			infoFact.value = item.fact ?? "";
 			infoIsHost.checked = isHost;
 
+			infoTagContainer.replaceChildren(); // Clear the tag container
+			infoTagInput.value = ""; // Clear the tag input
+			updateTags.splice(0, updateTags.length); // Clear the tags
+
+			if(item.tags){
+				for(const tagText of item.tags){
+					const tagElement = document.createElement("span");
+					tagElement.classList.add("tag");
+					tagElement.textContent = tagText;
+
+					// On click, remove the tag
+					tagElement.addEventListener("click", () => {
+						submitTags.splice(submitTags.indexOf(tagText), 1);
+						tagElement.remove();
+					});
+
+					updateTags.push(tagText);
+					infoTagContainer.appendChild(tagElement);
+				}
+			}
 
 			infoDifficulty.disabled = false;
 			infoHint.disabled = false;
 			infoFact.disabled = false;
+			infoTagInput.disabled = false;
 			deleteChallengeBtn.disabled = false;
 			updateChallengeBtn.disabled = false;
 		});
@@ -580,8 +719,17 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 			infoDifficulty.disabled = true;
 			infoHint.disabled = true;
 			infoFact.disabled = true;
+			infoTagInput.disabled = true;
 			deleteChallengeBtn.disabled = true;
 			updateChallengeBtn.disabled = true;
+
+			// Clear the Info
+			infoTagContainer.replaceChildren();
+			infoTagInput.value = "";
+			infoHint.value = "";
+			infoFact.value = "";
+			infoDifficulty.value = "";
+			updateTags.splice(0, updateTags.length);
 			activePopup = null;
 			currentChallenge = null;
 		});
@@ -643,6 +791,11 @@ async function refreshHostChallenges(controlLayer){
 	};
 
 	if(!controlLayer){
+		const hasEasy = map.hasLayer(hostChallenges?.easyGroup);
+		const hasMedium = map.hasLayer(hostChallenges?.mediumGroup);
+		const hasHard = map.hasLayer(hostChallenges?.hardGroup);
+		const hasImpossible = map.hasLayer(hostChallenges?.impossibleGroup);
+
 		layerControl.removeLayer(hostChallenges.easyGroup);
 		layerControl.removeLayer(hostChallenges.mediumGroup);
 		layerControl.removeLayer(hostChallenges.hardGroup);
@@ -652,10 +805,10 @@ async function refreshHostChallenges(controlLayer){
 		map.removeLayer(hostChallenges.hardGroup);
 		map.removeLayer(hostChallenges.impossibleGroup);
 
-		hostChallenges.easyGroup = overlays["Host Easy"].addTo(map);
-		hostChallenges.mediumGroup = overlays["Host Medium"].addTo(map);
-		hostChallenges.hardGroup = overlays["Host Hard"].addTo(map);
-		hostChallenges.impossibleGroup = overlays["Host Impossible"].addTo(map);
+		if(hasEasy) hostChallenges.easyGroup = overlays["Host Easy"].addTo(map);
+		if(hasMedium) hostChallenges.mediumGroup = overlays["Host Medium"].addTo(map);
+		if(hasHard) hostChallenges.hardGroup = overlays["Host Hard"].addTo(map);
+		if(hasImpossible) hostChallenges.impossibleGroup = overlays["Host Impossible"].addTo(map);
 		layerControl.addOverlay(hostChallenges.easyGroup, "Host Easy");
 		layerControl.addOverlay(hostChallenges.mediumGroup, "Host Medium");
 		layerControl.addOverlay(hostChallenges.hardGroup, "Host Hard");
@@ -664,12 +817,14 @@ async function refreshHostChallenges(controlLayer){
 		return updateCounts(localChallenges.count, counts);
 	}
 
-	const easyGroup = overlays["Host Easy"].addTo(map);
-	const mediumGroup = overlays["Host Medium"].addTo(map);
-	const hardGroup = overlays["Host Hard"].addTo(map);
-	const impossibleGroup = overlays["Host Impossible"].addTo(map);
-
-	return { overlay: overlays, count: counts, easyGroup, mediumGroup, hardGroup, impossibleGroup };
+	return {
+		overlay: overlays,
+		count: counts,
+		easyGroup: overlays["Host Easy"],
+		mediumGroup: overlays["Host Medium"],
+		hardGroup: overlays["Host Hard"],
+		impossibleGroup: overlays["Host Impossible"]
+	};
 }
 
 
@@ -699,7 +854,13 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 		impossible: challenges.impossible.length
 	};
 
+
 	if(!controlLayer){
+		const hasEasy = map.hasLayer(localChallenges?.easyGroup);
+		const hasMedium = map.hasLayer(localChallenges?.mediumGroup);
+		const hasHard = map.hasLayer(localChallenges?.hardGroup);
+		const hasImpossible = map.hasLayer(localChallenges?.impossibleGroup);
+
 		layerControl.removeLayer(localChallenges.easyGroup);
 		layerControl.removeLayer(localChallenges.mediumGroup);
 		layerControl.removeLayer(localChallenges.hardGroup);
@@ -709,10 +870,10 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 		map.removeLayer(localChallenges.hardGroup);
 		map.removeLayer(localChallenges.impossibleGroup);
 
-		localChallenges.easyGroup = overlays.Easy.addTo(map);
-		localChallenges.mediumGroup = overlays.Medium.addTo(map);
-		localChallenges.hardGroup = overlays.Hard.addTo(map);
-		localChallenges.impossibleGroup = overlays.Impossible.addTo(map);
+		if(hasEasy) localChallenges.easyGroup = overlays.Easy.addTo(map);
+		if(hasMedium) localChallenges.mediumGroup = overlays.Medium.addTo(map);
+		if(hasHard) localChallenges.hardGroup = overlays.Hard.addTo(map);
+		if(hasImpossible) localChallenges.impossibleGroup = overlays.Impossible.addTo(map);
 		layerControl.addOverlay(localChallenges.easyGroup, "Easy");
 		layerControl.addOverlay(localChallenges.mediumGroup, "Medium");
 		layerControl.addOverlay(localChallenges.hardGroup, "Hard");

@@ -54,7 +54,7 @@ const invertDifficultyFormat = {
 	"4":			"impossible"
 };
 
-
+// TODO: Swap between beta and prod server auth
 const getAuth = () => challengeFile.auth;
 const getSaveLocation = () => saveLocation;
 const saveChallenges = async () => {
@@ -66,7 +66,6 @@ const saveChallenges = async () => {
 		return false;
 	}
 };
-
 
 /* **************************** */
 /*                              */
@@ -213,6 +212,7 @@ async function handleFormSubmission(_event, form){
 			src: fileName,
 			fact: form.fact,
 			hint: form.hint,
+			tags: form.tags,
 			difficulty: form.difficulty,
 			actualLocation: {
 				lat: form.lat,
@@ -254,6 +254,7 @@ async function upload(difficulty, win, successes){
 			body.append("lat", challenge.actualLocation.lat);
 			body.append("lng", challenge.actualLocation.lng);
 			body.append("difficulty", challenge.difficulty);
+			body.append("tags", challenge.tags);
 			body.append("hint", challenge.hint);
 			body.append("fact", challenge.fact);
 			body.set("screenshot", blob, fileName);

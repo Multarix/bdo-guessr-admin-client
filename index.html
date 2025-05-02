@@ -47,6 +47,8 @@
 					</select>
 					<input disabled type="text" id="infoHint" name="infoHint" placeholder="Challenge Hint">
 					<input disabled type="text" id="infoFact" name="infoFact" placeholder="Challenge Fact">
+					<div id="infoTagContainer" class="tagContainer"></div>
+					<input disabled type="text" id="infoTagInput" name="tagInput" placeholder="Add Tags">
 					<input hidden type="checkbox" id="isHost" name="isHost">
 					<button disabled type="button" id="updateChallengeBtn">Update Challenge</button>
 					<button disabled type="button" id="deleteBtn" class="deleteBtn">Delete Challenge</button>
@@ -54,27 +56,29 @@
 				<hr>
 
 				<!-- Upload Form -->
-				<form id="uploadForm" enctype="multipart/form-data" method="post" action="/upload">
+				<form id="uploadForm">
 					<input type="hidden" id="date" name="date" required="">
 					<div class="two-col">
 						<div class="col1">
 							<label>Latitude:</label>
-							<input required="" type="text" id="lat" name="lat" class="coordinate">
+							<input disabled required="" type="number" id="lat" name="lat" class="coordinate" min="-1" max="0" step="any">
 						</div>
 						<div class="col2">
 							<label>Longitude:</label>
-							<input required="" type="text" id="lng" name="lng" class="coordinate">
+							<input disabled required="" type="number" id="lng" name="lng" class="coordinate" min="0" max="1" step="any">
 						</div>
 					</div>
-					<select required="" id="uploadDifficulty" name="uploadDifficulty">
+					<select disabled required id="uploadDifficulty" name="uploadDifficulty">
 						<option value="" selected disabled hidden>Select Difficulty</option>
 						<option value="1">Easy</option>
 						<option value="2">Medium</option>
 						<option value="3">Hard</option>
 						<option value="4">Impossible</option>
 					</select>
-					<input type="text" id="hint" name="hint" placeholder="Challenge Hint">
-					<input type="text" id="fact" name="fact" placeholder="Challenge Fact">
+					<input disabled type="text" id="hint" name="hint" placeholder="Challenge Hint">
+					<input disabled type="text" id="fact" name="fact" placeholder="Challenge Fact">
+					<div id="tagContainer" class="tagContainer"></div>
+					<input disabled type="text" id="tagInput" name="tagInput" placeholder="Add Tags">
 					<div class="fileSelector">
 						<button disabled id="screenshot" class="chooseFileButton">Browse...</button>
 						<input required="" disabled type="text" name="fileName" id="fileName" minlength="1"
@@ -82,7 +86,7 @@
 						<input required="" disabled type="text" id="filePath" name="filePath" minlength="1"
 							style="display: none">
 					</div>
-					<button disabled type="submit" id="submitForm" disabled>Upload Challenge</button>
+					<button disabled type="submit" id="submitForm" disabled>Add Challenge</button>
 				</form>
 
 				<!-- Challenge Counts -->
