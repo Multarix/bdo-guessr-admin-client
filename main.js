@@ -67,6 +67,7 @@ const saveChallenges = async () => {
 	}
 };
 
+
 /* **************************** */
 /*                              */
 /*           Set Auth           */
@@ -74,18 +75,25 @@ const saveChallenges = async () => {
 /* **************************** */
 
 async function setAuth(_event, auth){
-	// TODO: Check with the server if auth is valid, otherwise return an error to the user
-	// const response = await fetch("https://beta.bdoguessr.moe/auth", {
-	// 	method: "POST",
-	// 	headers: {
-	// 		"Authorization": `Basic ${auth}`
-	// 	}
-	// });
+	if(auth === ""){
+		challengeFile.auth = "";
 
-	// if(response.status !== 200) return { code: 401, message: "Invalid username/ password." };
+		const saveSuccess = await saveChallenges();
+		if(saveSuccess) return { code: 200, message: "Auth set successfully." };
+		return { code: 500, message: "Something went wrong with the request." };
+	}
+
+	// Check with the server if auth is valid, otherwise return an error to the user
+	const response = await fetch("https://beta.bdoguessr.moe/admin", {
+		method: "GET",
+		headers: {
+			"Authorization": `Basic ${auth}`
+		}
+	});
+
+	if(response.status !== 200) return { code: 401, message: "Invalid username/ password." };
 
 	challengeFile.auth = auth;
-
 	const saveSuccess = await saveChallenges();
 	if(saveSuccess) return { code: 200, message: "Auth set successfully." };
 	return { code: 500, message: "Something went wrong with the request." };
