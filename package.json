@@ -1,7 +1,7 @@
 {
   "name": "bdoguessr",
   "version": "1.0.0",
-  "description": "Local client for BDOGuessr",
+  "description": "Local admin client for BDOGuessr",
   "main": "main.js",
   "scripts": {
     "start": "electron-forge start",
