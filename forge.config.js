@@ -12,19 +12,35 @@ module.exports = {
 	makers: [
 		{
 			name: '@electron-forge/maker-squirrel',
-			config: {}
+			config: {
+				description: 'BDOGuessr Admin Client',
+				shortName: 'BDOGuessr',
+				version: '1.0.0'
+			}
 		},
 		{
 			name: '@electron-forge/maker-zip',
-			platforms: ['darwin']
+			config: {
+				description: 'BDOGuessr Admin Client',
+				shortName: 'BDOGuessr',
+				version: '1.0.0'
+			}
 		},
 		{
 			name: '@electron-forge/maker-deb',
-			config: {}
+			config: {
+				description: 'BDOGuessr Admin Client',
+				shortName: 'BDOGuessr',
+				version: '1.0.0'
+			}
 		},
 		{
 			name: '@electron-forge/maker-rpm',
-			config: {}
+			config: {
+				description: 'BDOGuessr Admin Client',
+				shortName: 'BDOGuessr',
+				version: '1.0.0'
+			}
 		}
 	],
 	plugins: [
