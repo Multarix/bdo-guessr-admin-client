@@ -70,8 +70,6 @@
  * @property {L.LayerGroup} impossibleGroup
  */
 
-// return { overlay: overlays, count: counts, easyGroup, mediumGroup, hardGroup, impossibleGroup };
-
 // Challenge Adding
 /** @type {HTMLInputElement} */
 const latInput = document.getElementById("lat");
@@ -95,6 +93,10 @@ const challengeFile = document.getElementById('filePath');
 const submitFormBtn = document.getElementById('submitForm');
 
 // Challenge Editing
+/** @type {HTMLInputElement} */
+const infoLat = document.getElementById("infoLat");
+/** @type {HTMLInputElement} */
+const infoLng = document.getElementById("infoLng");
 /** @type {HTMLSelectElement} */
 const infoDifficulty = document.getElementById("infoDifficulty");
 /** @type {HTMLInputElement} */
@@ -121,6 +123,15 @@ const statusMessage = document.getElementById("statusMessage");
 const syncToServerBtn = document.getElementById("syncToServer");
 /** @type {HTMLButtonElement} */
 const logoutBtn = document.getElementById("logoutBtn");
+
+/** @type {HTMLButtonElement} */
+const editSectionBtn = document.getElementById("editSectionBtn");
+/** @type {HTMLElement} */
+const editSection = document.getElementById("editSection");
+/** @type {HTMLButtonElement} */
+const addSectionBtn = document.getElementById("addSectionBtn");
+/** @type {HTMLElement} */
+const addSection = document.getElementById("addSection");
 
 /** @type {null | L.CircleMarker} */
 let activePopup = null; // The current popup we are looking at
@@ -316,22 +327,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 
 		const data = await response.json();
 		if(data.success){ // Successfully updated the challenge
-			infoDifficulty.disabled = true;
-			infoHint.disabled = true;
-			infoFact.disabled = true;
-			infoTagInput.disabled = true;
-			updateChallengeBtn.disabled = true;
-			deleteChallengeBtn.disabled = true;
-
-			// Clear the Info
-			infoTagContainer.replaceChildren();
-			infoTagInput.value = "";
-			infoHint.value = "";
-			infoFact.value = "";
-			infoDifficulty.value = "";
-			updateTags.splice(0, updateTags.length);
-			activePopup = null;
-			currentChallenge = null;
+			disableInfoPanel();
 
 			displayStatusMessage({
 				code: 200,
@@ -363,22 +359,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 	displayStatusMessage(response);
 
 	if(response.code === 200){
-		infoDifficulty.disabled = true;
-		infoHint.disabled = true;
-		infoFact.disabled = true;
-		infoTagInput.disabled = true;
-		updateChallengeBtn.disabled = true;
-		deleteChallengeBtn.disabled = true;
-
-		// Clear the Info
-		infoTagContainer.replaceChildren();
-		infoTagInput.value = "";
-		infoHint.value = "";
-		infoFact.value = "";
-		infoDifficulty.value = "";
-		updateTags.splice(0, updateTags.length);
-		activePopup = null;
-		currentChallenge = null;
+		disableInfoPanel();
 
 		await refreshLocalChallenges();
 	}
@@ -414,22 +395,7 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 
 		const data = await response.json();
 		if(data.success){ // Successfully deleted the challenge
-			infoDifficulty.disabled = true;
-			infoHint.disabled = true;
-			infoFact.disabled = true;
-			infoTagInput.disabled = true;
-			updateChallengeBtn.disabled = true;
-			deleteChallengeBtn.disabled = true;
-
-			// Clear the Info
-			infoTagContainer.replaceChildren();
-			infoTagInput.value = "";
-			infoHint.value = "";
-			infoFact.value = "";
-			infoDifficulty.value = "";
-			updateTags.splice(0, updateTags.length);
-			activePopup = null;
-			currentChallenge = null;
+			disableInfoPanel();
 
 			displayStatusMessage({
 				code: 200,
@@ -451,22 +417,7 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 	const response = await window.electronAPI.deleteChallenge(currentChallenge);
 
 	if(response.code === 200){
-		infoDifficulty.disabled = true;
-		infoHint.disabled = true;
-		infoFact.disabled = true;
-		infoTagInput.disabled = true;
-		updateChallengeBtn.disabled = true;
-		deleteChallengeBtn.disabled = true;
-
-		// Clear the Info
-		infoTagContainer.replaceChildren();
-		infoTagInput.value = "";
-		infoHint.value = "";
-		infoFact.value = "";
-		infoDifficulty.value = "";
-		updateTags.splice(0, updateTags.length);
-		activePopup = null;
-		currentChallenge = null;
+		disableInfoPanel();
 
 		displayStatusMessage(response);
 		await refreshLocalChallenges();
@@ -614,6 +565,9 @@ latInput.addEventListener("keypress", (evt) => {
 lngInput.addEventListener("keypress", (evt) => {
 	if(evt.key === "Enter") evt.preventDefault();
 });
+
+editSectionBtn.addEventListener("click", swapToEditSection);
+addSectionBtn.addEventListener("click", swapToAddSection);
 
 
 // Enable the buttons after all the event listeners have been added.
@@ -763,6 +717,8 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 			activePopup = circle;
 			currentChallenge = item;
 
+			infoLat.value = item.actualLocation.lat;
+			infoLng.value = item.actualLocation.lng;
 			infoDifficulty.value = convertDifficulty[difficulty];
 			infoHint.value = item.hint ?? "";
 			infoFact.value = item.fact ?? "";
@@ -789,31 +745,13 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 				}
 			}
 
-			infoDifficulty.disabled = false;
-			infoHint.disabled = false;
-			infoFact.disabled = false;
-			infoTagInput.disabled = false;
-			deleteChallengeBtn.disabled = false;
-			updateChallengeBtn.disabled = false;
+			enableInfoPanel();
+			swapToEditSection();
 		});
 
 		circle.on("popupclose", () => {
-			infoDifficulty.disabled = true;
-			infoHint.disabled = true;
-			infoFact.disabled = true;
-			infoTagInput.disabled = true;
-			updateChallengeBtn.disabled = true;
-			deleteChallengeBtn.disabled = true;
-
-			// Clear the Info
-			infoTagContainer.replaceChildren();
-			infoTagInput.value = "";
-			infoHint.value = "";
-			infoFact.value = "";
-			infoDifficulty.value = "";
-			updateTags.splice(0, updateTags.length);
-			activePopup = null;
-			currentChallenge = null;
+			swapToAddSection();
+			disableInfoPanel();
 		});
 
 		circles.push(circle);
@@ -970,4 +908,60 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 	const impossibleGroup = overlays.Impossible.addTo(map);
 
 	return { overlay: overlays, count: counts, easyGroup, mediumGroup, hardGroup, impossibleGroup };
+}
+
+
+/** *****************************
+ *                              *
+ *        Misc Functions        *
+ *                              *
+ ***************************** **/
+function swapToEditSection(){
+	editSectionBtn.disabled = true;
+	addSectionBtn.disabled = false;
+
+	editSection.style.display = "block";
+	addSection.style.display = "none";
+}
+
+function swapToAddSection(){
+	editSectionBtn.disabled = false;
+	addSectionBtn.disabled = true;
+
+	editSection.style.display = "none";
+	addSection.style.display = "block";
+}
+
+function enableInfoPanel(){
+	// infoLat.disabled = false;
+	// infoLng.disabled = false;
+	infoDifficulty.disabled = false;
+	infoHint.disabled = false;
+	infoFact.disabled = false;
+	infoTagInput.disabled = false;
+	updateChallengeBtn.disabled = false;
+	deleteChallengeBtn.disabled = false;
+}
+
+function disableInfoPanel(){
+	// infoLat.disabled = true;
+	// infoLng.disabled = true;
+	infoDifficulty.disabled = true;
+	infoHint.disabled = true;
+	infoFact.disabled = true;
+	infoTagInput.disabled = true;
+	updateChallengeBtn.disabled = true;
+	deleteChallengeBtn.disabled = true;
+
+	// Clear the Info
+	infoTagContainer.replaceChildren();
+	infoLat.value = "";
+	infoLng.value = "";
+	infoTagInput.value = "";
+	infoHint.value = "";
+	infoFact.value = "";
+	infoDifficulty.value = "";
+	updateTags.splice(0, updateTags.length);
+	activePopup = null;
+	currentChallenge = null;
 }

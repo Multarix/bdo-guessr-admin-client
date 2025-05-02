@@ -2,12 +2,14 @@
 <html>
 
 <head>
-	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://bdoguessr.moe/ data: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self' https://bdoguessr.moe/">
+	<meta http-equiv="Content-Security-Policy"
+		content="default-src 'self'; img-src 'self' https://bdoguessr.moe/ data: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self' https://bdoguessr.moe/">
 	<title>BDO Guessr</title>
 	<link rel="icon" type="image/x-icon" href="./icon.ico">
-	
+
 	<link rel="stylesheet" href="./static/admin.css">
-	<link rel="stylesheet" href="./static/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" />
+	<link rel="stylesheet" href="./static/leaflet.css"
+		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" />
 	<script src="./static/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="></script>
 	<script src='./static/Leaflet.fullscreen.min.js'></script>
 	<link href='./static/leaflet.fullscreen.css' rel='stylesheet' />
@@ -19,7 +21,7 @@
 	<div class="admin-wrapper">
 		<!-- Left column: Map -->
 		<div id="map"></div>
-		
+
 		<div id="syncContainer" class="syncContainer" style="display: none">
 			<button id="logoutBtn">Logout</button>
 			<button disabled id="syncToServer" class="syncToServer">
@@ -27,67 +29,87 @@
 				<div style="display: none" id="syncLoad" class="loader"></div>
 			</button>
 		</div>
-		
+
 		<div id="statusContainer">
 			<p id="statusMessage" class="statusMessage">Test Status Message</p>
 		</div>
-		
+
+
 		<!-- Right column: Controls, Info, Upload, and Stats -->
 		<div id="controls" class="submitFormDiv">
+			<div class="btnContainer">
+				<button disabled id="addSectionBtn">Create</button>
+				<button id="editSectionBtn">Edit</button>
+			</div>
+
 			<div class="center-container">
-				<!-- Info Panel -->
-				<div id="infoPanel">
-					<!-- Dropdown for updating difficulty -->
-					<select disabled id="infoDifficulty">
-						<option value="" selected disabled hidden></option>
-						<option value="1">Easy</option>
-						<option value="2">Medium</option>
-						<option value="3">Hard</option>
-						<option value="4">Impossible</option>
-					</select>
-					<input disabled type="text" id="infoHint" name="infoHint" placeholder="Challenge Hint">
-					<input disabled type="text" id="infoFact" name="infoFact" placeholder="Challenge Fact">
-					<div id="infoTagContainer" class="tagContainer"></div>
-					<input disabled type="text" id="infoTagInput" name="tagInput" placeholder="Add Tags">
-					<input hidden type="checkbox" id="isHost" name="isHost">
-					<button disabled type="button" id="updateChallengeBtn">Update Challenge</button>
-					<button disabled type="button" id="deleteBtn" class="deleteBtn">Delete Challenge</button>
-				</div>
-				<hr>
+
+				<section id="editSection" style="display: none;">
+					<!-- Info Panel -->
+					<div id="infoPanel">
+						<div class="two-col">
+							<div class="col1">
+								<label>Latitude:</label>
+								<input readonly type="text" id="infoLat" name="infoLat" class="coordinate">
+							</div>
+							<div class="col2">
+								<label>Longitude:</label>
+								<input readonly type="text" id="infoLng" name="infoLng" class="coordinate">
+							</div>
+						</div>
+						<select disabled id="infoDifficulty">
+							<option value="" selected disabled hidden></option>
+							<option value="1">Easy</option>
+							<option value="2">Medium</option>
+							<option value="3">Hard</option>
+							<option value="4">Impossible</option>
+						</select>
+						<input disabled type="text" id="infoHint" name="infoHint" placeholder="Challenge Hint">
+						<input disabled type="text" id="infoFact" name="infoFact" placeholder="Challenge Fact">
+						<div id="infoTagContainer" class="tagContainer"></div>
+						<input disabled type="text" id="infoTagInput" name="tagInput" placeholder="Add Tags">
+						<input hidden type="checkbox" id="isHost" name="isHost">
+						<button disabled type="button" id="updateChallengeBtn">Update Challenge</button>
+						<button disabled type="button" id="deleteBtn" class="deleteBtn">Delete Challenge</button>
+					</div>
+				</section>
+
 
 				<!-- Upload Form -->
-				<form id="uploadForm">
-					<input type="hidden" id="date" name="date" required="">
-					<div class="two-col">
-						<div class="col1">
-							<label>Latitude:</label>
-							<input disabled required="" type="number" id="lat" name="lat" class="coordinate" min="-1" max="0" step="any">
+				<section id="addSection">
+					<form id="uploadForm">
+						<input type="hidden" id="date" name="date" required="">
+						<div class="two-col">
+							<div class="col1">
+								<label>Latitude:</label>
+								<input disabled required="" type="number" id="lat" name="lat" min="-1" max="0" step="any">
+							</div>
+							<div class="col2">
+								<label>Longitude:</label>
+								<input disabled required="" type="number" id="lng" name="lng" min="0" max="1" step="any">
+							</div>
 						</div>
-						<div class="col2">
-							<label>Longitude:</label>
-							<input disabled required="" type="number" id="lng" name="lng" class="coordinate" min="0" max="1" step="any">
+						<select disabled required id="uploadDifficulty" name="uploadDifficulty">
+							<option value="" selected disabled hidden>Select Difficulty</option>
+							<option value="1">Easy</option>
+							<option value="2">Medium</option>
+							<option value="3">Hard</option>
+							<option value="4">Impossible</option>
+						</select>
+						<input disabled type="text" id="hint" name="hint" placeholder="Challenge Hint">
+						<input disabled type="text" id="fact" name="fact" placeholder="Challenge Fact">
+						<div id="tagContainer" class="tagContainer"></div>
+						<input disabled type="text" id="tagInput" name="tagInput" placeholder="Add Tags">
+						<div class="fileSelector">
+							<button disabled id="screenshot" class="chooseFileButton">Browse...</button>
+							<input required="" disabled type="text" name="fileName" id="fileName" minlength="1"
+								class="fileNameInput" placeholder="No file selected.">
+							<input required="" disabled type="text" id="filePath" name="filePath" minlength="1"
+								style="display: none">
 						</div>
-					</div>
-					<select disabled required id="uploadDifficulty" name="uploadDifficulty">
-						<option value="" selected disabled hidden>Select Difficulty</option>
-						<option value="1">Easy</option>
-						<option value="2">Medium</option>
-						<option value="3">Hard</option>
-						<option value="4">Impossible</option>
-					</select>
-					<input disabled type="text" id="hint" name="hint" placeholder="Challenge Hint">
-					<input disabled type="text" id="fact" name="fact" placeholder="Challenge Fact">
-					<div id="tagContainer" class="tagContainer"></div>
-					<input disabled type="text" id="tagInput" name="tagInput" placeholder="Add Tags">
-					<div class="fileSelector">
-						<button disabled id="screenshot" class="chooseFileButton">Browse...</button>
-						<input required="" disabled type="text" name="fileName" id="fileName" minlength="1"
-							class="fileNameInput" placeholder="No file selected.">
-						<input required="" disabled type="text" id="filePath" name="filePath" minlength="1"
-							style="display: none">
-					</div>
-					<button disabled type="submit" id="submitForm" disabled>Add Challenge</button>
-				</form>
+						<button disabled type="submit" id="submitForm" disabled>Add Challenge</button>
+					</form>
+				</section>
 
 				<!-- Challenge Counts -->
 				<div class="challengeStatsDiv">
@@ -124,7 +146,7 @@
 						</div>
 					</div>
 				</div>
-				
+
 			</div><!-- end center-container -->
 		</div><!-- end controls -->
 	</div>

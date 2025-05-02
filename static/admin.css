@@ -1,7 +1,18 @@
 /* Generics */
-body {
+:root {
+	--background-color : #2b2b2b;
+	--border-style: 2px solid #444;
+	--button-color: #4caf50;
+	--button-hover-color: #3f9242;
+	--ui-background-color: #444;
+	--ui-border-radius: 10px;
+	--ui-border-style: 2px solid rgb(163, 163, 163);
+	--button-negative: #f44336;
+	--button-negative-hover: #d32f2f;
+}
 
-	background-color: #2b2b2b;
+body {
+	background-color: var(--background-color);
 	color: white;
 	font-family: Arial, sans-serif;
 	margin: 0;
@@ -51,7 +62,7 @@ select {
 	margin: 5px 0;
 	font-size: 16px;
 	box-sizing: border-box;
-	border: 2px solid #444;
+	border: var(--border-style);
 	border-radius: 5px;
 }
 
@@ -63,9 +74,9 @@ input[type="file"] {
 }
 
 input[type="file"]::file-selector-button {
-	background-color: #4caf50;
+	background-color: var(--button-color);
 	border: none;
-	color: #ffffff;
+	color: white;
 	padding: 10px;
 	border-radius: 5px;
 	cursor: pointer;
@@ -84,25 +95,22 @@ input::file-selector-button {
 }
 
 button {
-	background-color: #4caf50;
+	background-color: var(--button-color);
 	color: white;
 	border: none;
 	cursor: pointer;
-	transition: background-color 0.1s ease;
+	transition: 0.1s ease;
 	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+	height: 42px;
 
 	&:hover {
-		background-color: #3f9242;
+		background-color: var(--button-hover-color);
 	}
 }
-
-
 
 hr {
 	margin: 1em 0;
 }
-
-
 
 /* Admin Page UI */
 .syncContainer {
@@ -110,11 +118,10 @@ hr {
 	left: 8px;
 	bottom: 8px;
 	z-index: 999;
-
-	background-color: #444;
-
-	border-radius: 10px;
-	border: 2px solid rgb(163, 163, 163);
+	
+	background-color: var(--ui-background-color);
+	border-radius: var(--ui-border-radius);
+	border: var(--ui-border-style);
 	box-shadow: 0 2px 10px rgba(0, 0, 0, 1);
 	padding: 0;
 	margin: 0;
@@ -155,13 +162,13 @@ hr {
 	transition: 1s;
 	z-index: 999;
 	
-	background-color: #444;
+	background-color: var(--ui-background-color);
 	padding: 8px 16px 10px 16px;
 	margin: 0;
 	width: fit-content;
 
 	border-radius: 0 0 10px 10px;
-	border: 2px solid rgb(163, 163, 163);
+	border: var(--ui-border-style);
 	border-top: unset;
 	box-shadow: 0 2px 10px rgba(0, 0, 0, 1);
 }
@@ -184,7 +191,7 @@ hr {
 	height: 100%;
 	max-height: 100vh;
 
-	border-right: 2px solid rgb(163, 163, 163);
+	border-right: var(--ui-border-style);
 }
 
 .submitFormDiv {
@@ -194,10 +201,10 @@ hr {
 
 	height: fit-content;
 	max-height: 100vh;
-	background-color: #444;
+	background-color: var(--ui-background-color);
 
 	border-radius: 10px 0 0 10px;
-	border: 2px solid rgb(163, 163, 163);
+	border: var(--ui-border-style);
 	border-right: unset;
 	box-shadow: 0 2px 10px rgba(0, 0, 0, 1);
 
@@ -274,7 +281,7 @@ hr {
 	display: flex;
 	border: 2px solid #363636;
 	border-radius: 6px;
-	padding: 5px 9px;
+	padding: 0px 7px;
 }
 
 
@@ -296,12 +303,12 @@ hr {
 }
 
 .deleteBtn {
-	background-color: #f44336;
+	background-color: var(--button-negative);
 	/* red */
 }
 
 .deleteBtn:enabled:hover {
-	background-color: #d32f2f;
+	background-color: var(--button-negative-hover);
 	/* darker red */
 }
 
@@ -318,14 +325,71 @@ hr {
 
 .tag:hover {
 	cursor: pointer;
-	background-color: #af4c59;
+	background-color: var(--button-negative);
 }
-
 
 button:disabled {
 	background-color: gray !important;
 	cursor: unset !important;
 }
+
+.coordinate:read-only {
+	color: white;
+	background-color: var(--ui-background-color);
+}
+
+.btnContainer {
+	box-sizing: border-box;
+	padding: 0;
+	margin: 1em 1em 0 0;
+	display: flex;
+	flex-direction: row;
+	gap: 0;
+	width: 100%;
+}
+
+.btnContainer button {
+	display: block;
+	border-radius: unset;
+	
+	border: unset;
+	border-top: var(--ui-border-style);
+	border-bottom: var(--ui-border-style);
+	
+	box-shadow: unset;
+	
+	flex-grow: 1;
+	
+	background: var(--ui-background-color);
+	color: white;
+	
+	padding: 1em;
+	margin: 0;
+	width: 80px;
+	height: unset;
+	
+	&:hover {
+		background-color: var(--background-color);
+		cursor: pointer;
+	}
+	
+	&:disabled {
+		background-color: var(--button-color) !important;
+	}
+}
+
+.btnContainer button:first-child {
+	border-top-left-radius: var(--ui-border-radius);
+	border-bottom-left-radius: var(--ui-border-radius);
+	border-left: var(--ui-border-style);
+}
+
+.btnContainer button:last-child {
+	border-top-right-radius: var(--ui-border-radius);
+	border-bottom-right-radius: var(--ui-border-radius);
+	border-right: var(--ui-border-style);
+}
+
 
 /* Loading Icon */
 .loader {
