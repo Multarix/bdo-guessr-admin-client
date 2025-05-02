@@ -258,7 +258,8 @@ async function upload(difficulty, win, successes){
 
 	for(const challenge of challenges){
 		try {
-			const blob = new Blob([await fsPromise.readFile(path.join(screenshotFolder, challenge.src))]);
+			const screenshotLocation = path.join(screenshotFolder, challenge.src);
+			const blob = new Blob([await fsPromise.readFile(screenshotLocation)]);
 			const fileName = challenge.src.split("/").pop();
 
 			const body = new FormData();
@@ -290,7 +291,7 @@ async function upload(difficulty, win, successes){
 				// Move the file to "uploaed" folder
 				if(!fs.existsSync("./data/uploaded/")) fs.mkdirSync("./data/uploaded/");
 				if(fs.existsSync(uploadedPath)) fs.unlinkSync(uploadedPath);
-				await fsPromise.rename(challenge.src, uploadedPath);
+				await fsPromise.rename(screenshotLocation, uploadedPath);
 
 				// Save the json
 				await fsPromise.writeFile("./data/challenges.json", JSON.stringify(challengeFile, null, "\t"), { encoding: "utf8" });
