@@ -258,7 +258,7 @@ async function upload(difficulty, win, successes){
 
 	for(const challenge of challenges){
 		try {
-			const blob = new Blob([await fsPromise.readFile(challenge.src)]);
+			const blob = new Blob([await fsPromise.readFile(path.join(screenshotFolder, challenge.src))]);
 			const fileName = challenge.src.split("/").pop();
 
 			const body = new FormData();
