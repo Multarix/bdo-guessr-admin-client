@@ -800,10 +800,10 @@ async function refreshHostChallenges(controlLayer){
 	const challenges = await fetchAndConvertChallenges("https://bdoguessr.moe/challenges.json");
 
 	const overlays = {
-		"Host Easy": L.layerGroup(makeCircles(challenges.easy, "easy", true)),
-		"Host Medium": L.layerGroup(makeCircles(challenges.medium, "medium", true)),
-		"Host Hard": L.layerGroup(makeCircles(challenges.hard, "hard", true)),
-		"Host Impossible": L.layerGroup(makeCircles(challenges.impossible, "impossible", true))
+		"Prod Easy": L.layerGroup(makeCircles(challenges.easy, "easy", true)),
+		"Prod Medium": L.layerGroup(makeCircles(challenges.medium, "medium", true)),
+		"Prod Hard": L.layerGroup(makeCircles(challenges.hard, "hard", true)),
+		"Prod Impossible": L.layerGroup(makeCircles(challenges.impossible, "impossible", true))
 	};
 
 	const counts = {
