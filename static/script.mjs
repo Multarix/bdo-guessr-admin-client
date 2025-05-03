@@ -725,7 +725,7 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 
 			infoTagContainer.replaceChildren(); // Clear the tag container
 			infoTagInput.value = ""; // Clear the tag input
-			updateTags.splice(0, updateTags.length); // Clear the tags
+			updateTags = []; // Clear the tags
 
 			if(item.tags){
 				for(const tagText of item.tags){
