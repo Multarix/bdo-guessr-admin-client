@@ -78,9 +78,9 @@ const lngInput = document.getElementById("lng");
 /** @type {HTMLSelectElement} */
 const uploadDifficulty = document.getElementById("uploadDifficulty");
 /** @type {HTMLInputElement} */
-const challengeFact = document.getElementById('hint');
+const challengeFact = document.getElementById('fact');
 /** @type {HTMLInputElement} */
-const challengeHint = document.getElementById('fact');
+const challengeHint = document.getElementById('hint');
 /** @type {HTMLDivElement} */
 const tagContainer = document.getElementById("tagContainer");
 /** @type {HTMLInputElement} */
