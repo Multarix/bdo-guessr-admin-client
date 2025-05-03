@@ -531,8 +531,8 @@ infoTagInput.addEventListener("keypress", (evt) => {
 	if(evt.key === "Enter" && cleaned.length > 0 || evt.key === " " && cleaned.length > 0){
 		infoTagInput.value = "";
 
-		if(!submitTags.includes(cleaned)){
-			submitTags.push(cleaned);
+		if(!updateTags.includes(cleaned)){
+			updateTags.push(cleaned);
 
 			const tag = document.createElement("span");
 			tag.classList.add("tag");
@@ -540,7 +540,7 @@ infoTagInput.addEventListener("keypress", (evt) => {
 
 			// On click, remove the tag
 			tag.addEventListener("click", () => {
-				submitTags.splice(submitTags.indexOf(cleaned), 1);
+				updateTags.splice(updateTags.indexOf(cleaned), 1);
 				tag.remove();
 			});
 
@@ -735,7 +735,7 @@ function makeCircles(difficultyArray, difficulty, isHost = false){
 
 					// On click, remove the tag
 					tagElement.addEventListener("click", () => {
-						submitTags.splice(submitTags.indexOf(tagText), 1);
+						updateTags.splice(updateTags.indexOf(tagText), 1);
 						tagElement.remove();
 					});
 
