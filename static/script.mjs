@@ -184,7 +184,7 @@ map.fitBounds(imageBounds);
 map.setMaxBounds(imageBounds);
 
 // Set up the map tiles
-L.tileLayer('./tiles/{z}/{x}/{y}.webp', {
+const betaTiles = L.tileLayer('./tiles/{z}/{x}/{y}.webp', {
 	minZoom: 3,
 	maxZoom: 9,
 	tileSize: 256,
@@ -192,6 +192,10 @@ L.tileLayer('./tiles/{z}/{x}/{y}.webp', {
 	maxNativeZoom: 7,
 	bounds: imageBounds
 }).addTo(map);
+
+const tiles = {
+	"Local Tiles": betaTiles
+};
 
 // ~Heidel
 map.setView([-144.5, 139.0], 5); // Focus on Heidel
@@ -226,7 +230,7 @@ map.on("click", (ev) => {
 
 const hostChallenges = await refreshHostChallenges(true); // Get challangesfrom bdoguesser
 const localChallenges = await refreshLocalChallenges(true); // Get challenges from local file
-const layerControl = L.control.layers(null, Object.assign(localChallenges.overlay, hostChallenges.overlay)).addTo(map);
+const layerControl = L.control.layers(tiles, Object.assign(localChallenges.overlay, hostChallenges.overlay)).addTo(map);
 updateCounts(localChallenges.count, hostChallenges.count);
 
 
