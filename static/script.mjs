@@ -789,7 +789,7 @@ function updateCounts(localCount, hostCount){
 /**
  ********************************
  *                              *
- *       Host Challenges        *
+ *       Prof Challenges        *
  *                              *
  ********************************
  * @name refreshHostChallenges
@@ -828,14 +828,14 @@ async function refreshHostChallenges(controlLayer){
 		map.removeLayer(hostChallenges.hardGroup);
 		map.removeLayer(hostChallenges.impossibleGroup);
 
-		if(hasEasy) hostChallenges.easyGroup = overlays["Host Easy"].addTo(map);
-		if(hasMedium) hostChallenges.mediumGroup = overlays["Host Medium"].addTo(map);
-		if(hasHard) hostChallenges.hardGroup = overlays["Host Hard"].addTo(map);
-		if(hasImpossible) hostChallenges.impossibleGroup = overlays["Host Impossible"].addTo(map);
-		layerControl.addOverlay(hostChallenges.easyGroup, "Host Easy");
-		layerControl.addOverlay(hostChallenges.mediumGroup, "Host Medium");
-		layerControl.addOverlay(hostChallenges.hardGroup, "Host Hard");
-		layerControl.addOverlay(hostChallenges.impossibleGroup, "Host Impossible");
+		if(hasEasy) hostChallenges.easyGroup = overlays["Prod Easy"].addTo(map);
+		if(hasMedium) hostChallenges.mediumGroup = overlays["Prod Medium"].addTo(map);
+		if(hasHard) hostChallenges.hardGroup = overlays["Prod Hard"].addTo(map);
+		if(hasImpossible) hostChallenges.impossibleGroup = overlays["Prod Impossible"].addTo(map);
+		layerControl.addOverlay(hostChallenges.easyGroup, "Prod Easy");
+		layerControl.addOverlay(hostChallenges.mediumGroup, "Prod Medium");
+		layerControl.addOverlay(hostChallenges.hardGroup, "Prod Hard");
+		layerControl.addOverlay(hostChallenges.impossibleGroup, "Prod Impossible");
 
 		return updateCounts(localChallenges.count, counts);
 	}
@@ -843,10 +843,10 @@ async function refreshHostChallenges(controlLayer){
 	return {
 		overlay: overlays,
 		count: counts,
-		easyGroup: overlays["Host Easy"],
-		mediumGroup: overlays["Host Medium"],
-		hardGroup: overlays["Host Hard"],
-		impossibleGroup: overlays["Host Impossible"]
+		easyGroup: overlays["Prod Easy"],
+		mediumGroup: overlays["Prod Medium"],
+		hardGroup: overlays["Prod Hard"],
+		impossibleGroup: overlays["Prod Impossible"]
 	};
 }
 
