@@ -139,9 +139,9 @@ let activePopup = null; // The current popup we are looking at
 let currentChallenge = null; // The current challenge we are looking at
 
 /** @type {string[]} */
-const updateTags = [];
+let updateTags = [];
 /** @type {string[]} */
-const submitTags = [];
+let submitTags = [];
 
 const convertDifficulty = {
 	"easy": 		"1",
@@ -275,7 +275,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 
 	if(response.code === 200){
 		form.reset();
-		submitTags.slice(0, submitTags.length); // Clear the tags
+		submitTags = []; // Clear the tags
 		tagContainer.replaceChildren(); // Clear the tag container
 
 		latInput.disabled = false;
@@ -960,7 +960,7 @@ function disableInfoPanel(){
 	infoHint.value = "";
 	infoFact.value = "";
 	infoDifficulty.value = "";
-	updateTags.splice(0, updateTags.length);
+	updateTags = [];
 	activePopup = null;
 	currentChallenge = null;
 }
