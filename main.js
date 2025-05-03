@@ -142,6 +142,7 @@ async function handleUpdateChallenge(_event, data){
 	challengeFile[oldDiff][original].fact = data.fact;
 	challengeFile[oldDiff][original].hint = data.hint;
 	challengeFile[oldDiff][original].difficulty = data.difficulty;
+	challengeFile[oldDiff][original].tags = data.tags;
 
 	// If the difficulty changed, move the entry to the new difficulty
 	if(data.oldDifficulty !== data.difficulty){
