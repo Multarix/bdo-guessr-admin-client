@@ -1,21 +1,9 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu } = require("electron/main");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron/main");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const path = require('path');
 const fs = require("fs");
 const fsPromise = require("fs/promises");
-
-const saveLocation = path.join(app.getPath("documents"), "BDOGuessr/");
-if(!fs.existsSync(saveLocation)) fs.mkdirSync(saveLocation, { recursive: true });
-
-const challengesPath = path.join(saveLocation, "challenges.json");
-if(!fs.existsSync(challengesPath)) fs.writeFileSync(challengesPath, JSON.stringify({ "easy": [], "medium": [], "hard": [], "impossible": [], "auth": "" }, null, "\t"), { encoding: "utf8" });
-const challengeFile = require(challengesPath);
-
-const screenshotFolder = path.join(saveLocation, "screenshots/");
-if(!fs.existsSync(screenshotFolder)) fs.mkdirSync(screenshotFolder, { recursive: true });
-
-const bdoScreenshotFolder = path.join(app.getPath("documents"), "Black Desert/ScreenShot");
 
 /**
  * @typedef Latlng
@@ -39,7 +27,21 @@ const bdoScreenshotFolder = path.join(app.getPath("documents"), "Black Desert/Sc
  * @property {string} auth
  */
 
+
+const saveLocation = path.join(app.getPath("documents"), "BDOGuessr/");
+if(!fs.existsSync(saveLocation)) fs.mkdirSync(saveLocation, { recursive: true });
+
+const challengesPath = path.join(saveLocation, "challenges.json");
+if(!fs.existsSync(challengesPath)) fs.writeFileSync(challengesPath, JSON.stringify({ "easy": [], "medium": [], "hard": [], "impossible": [], "auth": "" }, null, "\t"), { encoding: "utf8" });
+
 /** @type {ChallengeFile} */
+const challengeFile = require(challengesPath);
+
+const screenshotFolder = path.join(saveLocation, "screenshots/");
+if(!fs.existsSync(screenshotFolder)) fs.mkdirSync(screenshotFolder, { recursive: true });
+
+const bdoScreenshotFolder = path.join(app.getPath("documents"), "Black Desert/ScreenShot");
+
 const invertDifficultyFormat = {
 	"easy": 		"1",
 	"medium":		"2",
@@ -128,15 +130,17 @@ async function openFile(){
 /*                              */
 /* **************************** */
 async function handleUpdateChallenge(_event, data){
+	// return { code: 500, message: "Not implemented yet." };
 	// Make sure the challenge exists and all that jazz
 	const original = challengeFile.challenges.findIndex((item) => item.src === data.src);
 	if(original === -1) return { code: 404, message: "That challenge seems to be missing." };
 
+
 	// Update the entry
-	challengeFile[original].fact = data.fact;
-	challengeFile[original].hint = data.hint;
-	challengeFile[original].difficulty = data.difficulty;
-	challengeFile[original].tags = data.tags;
+	challengeFile.challenges[original].fact = data.fact;
+	challengeFile.challenges[original].hint = data.hint;
+	challengeFile.challenges[original].difficulty = data.difficulty;
+	challengeFile.challenges[original].tags = data.tags;
 
 	const saveSuccess = await saveChallenges();
 	if(saveSuccess) return { code: 200, message: "Challenge updated successfully." };
