@@ -481,6 +481,7 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	const response = await window.electronAPI.syncToServer();
 	displayStatusMessage(response);
 	await refreshLocalChallenges();
+	await refreshBetaChallenges();
 
 	syncToServerBtn.disabled = false;
 	uploadFileBtn.disabled = false;
@@ -709,7 +710,7 @@ async function fetchAndConvertHostChallenges(url, options = {}){
 async function fetchAndConvertLocalChallenges(url){
 	const response = await fetch(url);
 	const challengeFile = await response.json();
-	if(!challengeFile.auth) document.getElementById("syncContainer").style.display = "";
+	if(challengeFile.auth) document.getElementById("syncContainer").style.display = "";
 
 	const obj = {};
 
