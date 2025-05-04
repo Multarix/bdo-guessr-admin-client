@@ -2,8 +2,7 @@
 <html>
 
 <head>
-	<meta http-equiv="Content-Security-Policy"
-		content="default-src 'self'; img-src 'self' https://bdoguessr.moe/ data: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self' https://bdoguessr.moe/">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://bdoguessr.moe/ https://beta.bdoguessr.moe/ data: blob: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self' https://bdoguessr.moe/ https://beta.bdoguessr.moe/">
 	<title>BDO Guessr</title>
 	<link rel="icon" type="image/x-icon" href="./icon.ico">
 	<link rel="stylesheet" href="./static/admin.css">
@@ -68,7 +67,7 @@
 						<div id="infoTagContainer" class="tagContainer"></div>
 						<input disabled type="text" id="infoTagInput" name="tagInput" placeholder="Add Tags">
 						<input hidden type="checkbox" id="isHost" name="isHost">
-						<input hidden type="checkbox" id="isBetaHost" name="isBetaHost">
+						<input hidden type="checkbox" id="isBeta" name="isBeta">
 						<button disabled type="button" id="updateChallengeBtn">Update Challenge</button>
 						<button disabled type="button" id="deleteBtn" class="deleteBtn">Delete Challenge</button>
 					</div>
