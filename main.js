@@ -242,14 +242,14 @@ async function upload(){
 	const window = BrowserWindow.getAllWindows()[0];
 
 	let successes = 0;
-	let count = 0;
+	const challenges = challengeFile.challenges;
+	const challengeCount = challenges.length;
+	if(challengeCount === 0) return 0;
 
-	/** @type {ChallengeData[]} */
-	if(challengeFile.challenges.length === 0) return 0;
-	const challengeCount = challengeFile.challenges.length;
+	for(let i = 0; i < challengeCount; i++){
+		const challenge = challenges[i];
+		const count = i + 1;
 
-	for(const challenge of challengeFile.challenges){
-		count += 1;
 		try {
 			const screenshotLocation = path.join(screenshotFolder, challenge.src);
 			const blob = new Blob([await fsPromise.readFile(screenshotLocation)]);
@@ -280,9 +280,12 @@ async function upload(){
 				const index = challengeFile.challenges.findIndex((item) => item.src === challenge.src);
 				if(index !== -1) challengeFile.challenges.splice(index, 1);
 
-				// Move the file to "uploaed" folder
+				// Move the file to "uploaded" folder
 				if(!fs.existsSync(uploadedFolder)) fs.mkdirSync(uploadedFolder);
-				if(fs.existsSync(uploadedPath)) fs.unlinkSync(uploadedPath);
+				if(fs.existsSync(uploadedPath)){
+					fs.unlinkSync(uploadedPath);
+					console.warn(`File ${fileName} already exists in the uploaded folder. Deleting it...`);
+				}
 				await fsPromise.rename(screenshotLocation, uploadedPath);
 
 				// Save the json
@@ -290,9 +293,9 @@ async function upload(){
 				const uploadStatus = { code: 200, message: `${fileName} was uploaded successfully. (${count}/${challengeCount})` };
 				console.log(uploadStatus.message);
 				if(saveSuccess) window.webContents.send("uploadStatus", uploadStatus);
-				successes += 1;
 
-				continue; // Go to next iteration
+				successes += 1;
+				continue; // Go to next iteration+
 			}
 
 			const uploadStatus = { code: 200, message: `${fileName} failed to upload. (${count}/${challengeCount})` };
@@ -322,12 +325,6 @@ async function syncChallengesToServer(){
 
 	console.log("Starting upload of challenges...");
 	const successes = await upload();
-
-	await new Promise((resolve) => {
-		setTimeout(() => {
-			resolve();
-		}, 6000);
-	});
 
 	return { code: 200, message: `${successes}/${challengeCount} challenges were uploaded.` };
 }
