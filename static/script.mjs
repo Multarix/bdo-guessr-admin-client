@@ -214,8 +214,7 @@ const tiles = {
 	// "Port Ratt": portRatt
 };
 
-// ~Heidel
-map.setView([-144.5, 139.0], 5); // Focus on Heidel
+map.setView([-144.5, 139.0], 5); // Focus roughly on Heidel
 
 // On map click, place downa a marker
 let marker;
@@ -248,7 +247,16 @@ map.on("click", (ev) => {
 const hostChallenges = await refreshProdChallenges(true); // Get challangesfrom bdoguesser
 const localChallenges = await refreshLocalChallenges(true); // Get challenges from local file
 const betaChallenges = await refreshBetaChallenges(true); // Get challenges from beta server
-const layerControl = L.control.layers(tiles, Object.assign(localChallenges.overlay, hostChallenges.overlay, betaChallenges.overlay)).addTo(map);
+
+const allOverlays = Object.assign(localChallenges.overlay, hostChallenges.overlay, betaChallenges.overlay);
+const controlLayerOptions = {
+	autoZIndex: true,
+	hideSingleBase: true,
+	sortLayers: true,
+	sortFunction: layerSortFunction
+};
+
+const layerControl = L.control.layers(tiles, allOverlays, controlLayerOptions).addTo(map);
 updateCounts(localChallenges.count, hostChallenges.count, betaChallenges.count); // Update the counts on the page
 
 
@@ -674,6 +682,7 @@ function displayStatusMessage(response){
  */
 async function fetchAndConvertHostChallenges(url, options = {}){
 	const response = await fetch(url, options);
+	if(!response.ok) return { easy: [], medium: [], hard: [], impossible: [] };
 	const challenges = await response.json();
 
 	const { easy, medium, hard, impossible } = challenges;
@@ -732,7 +741,7 @@ async function fetchAndConvertLocalChallenges(url){
  ********************************
  * @name makeCircles
  * @param {ChallengeData[]} difficultyArray
- * @param {"1"|"2"|"3"|"4"} difficulty
+ * @param {"easy"|"medium"|"hard"|"impossible"} difficulty
  * @param {0|1|2} type 0: Local, 1: Prod, 2: Beta
  * @returns {Promise<L.CircleMarker[]>}
  */
@@ -859,10 +868,10 @@ async function refreshProdChallenges(controlLayer){
 	const challenges = await fetchAndConvertHostChallenges("https://bdoguessr.moe/challenges.json");
 
 	const overlays = {
-		"Prod Easy": L.layerGroup(await makeCircles(challenges.easy, "easy", true)),
-		"Prod Medium": L.layerGroup(await makeCircles(challenges.medium, "medium", true)),
-		"Prod Hard": L.layerGroup(await makeCircles(challenges.hard, "hard", true)),
-		"Prod Impossible": L.layerGroup(await makeCircles(challenges.impossible, "impossible", true))
+		"Easy (Prod)": L.layerGroup(await makeCircles(challenges.easy, "easy", 1)),
+		"Medium (Prod)": L.layerGroup(await makeCircles(challenges.medium, "medium", 1)),
+		"Hard (Prod)": L.layerGroup(await makeCircles(challenges.hard, "hard", 1)),
+		"Impossible (Prod)": L.layerGroup(await makeCircles(challenges.impossible, "impossible", 1))
 	};
 
 	const counts = {
@@ -873,28 +882,7 @@ async function refreshProdChallenges(controlLayer){
 	};
 
 	if(!controlLayer){
-		const hasEasy = map.hasLayer(hostChallenges?.easyGroup);
-		const hasMedium = map.hasLayer(hostChallenges?.mediumGroup);
-		const hasHard = map.hasLayer(hostChallenges?.hardGroup);
-		const hasImpossible = map.hasLayer(hostChallenges?.impossibleGroup);
-
-		layerControl.removeLayer(hostChallenges.easyGroup);
-		layerControl.removeLayer(hostChallenges.mediumGroup);
-		layerControl.removeLayer(hostChallenges.hardGroup);
-		layerControl.removeLayer(hostChallenges.impossibleGroup);
-		map.removeLayer(hostChallenges.easyGroup);
-		map.removeLayer(hostChallenges.mediumGroup);
-		map.removeLayer(hostChallenges.hardGroup);
-		map.removeLayer(hostChallenges.impossibleGroup);
-
-		if(hasEasy) hostChallenges.easyGroup = overlays["Prod Easy"].addTo(map);
-		if(hasMedium) hostChallenges.mediumGroup = overlays["Prod Medium"].addTo(map);
-		if(hasHard) hostChallenges.hardGroup = overlays["Prod Hard"].addTo(map);
-		if(hasImpossible) hostChallenges.impossibleGroup = overlays["Prod Impossible"].addTo(map);
-		layerControl.addOverlay(hostChallenges.easyGroup, "Prod Easy");
-		layerControl.addOverlay(hostChallenges.mediumGroup, "Prod Medium");
-		layerControl.addOverlay(hostChallenges.hardGroup, "Prod Hard");
-		layerControl.addOverlay(hostChallenges.impossibleGroup, "Prod Impossible");
+		refreshCircles(hostChallenges, overlays, "Prod");
 
 		hostChallenges.count = counts;
 		return updateCounts(localChallenges.count, counts, betaChallenges.count);
@@ -903,10 +891,10 @@ async function refreshProdChallenges(controlLayer){
 	return {
 		overlay: overlays,
 		count: counts,
-		easyGroup: overlays["Prod Easy"],
-		mediumGroup: overlays["Prod Medium"],
-		hardGroup: overlays["Prod Hard"],
-		impossibleGroup: overlays["Prod Impossible"]
+		easyGroup: overlays["Easy (Prod)"],
+		mediumGroup: overlays["Medium (Prod)"],
+		hardGroup: overlays["Hard (Prod)"],
+		impossibleGroup: overlays["Impossible (Prod)"]
 	};
 }
 
@@ -922,18 +910,13 @@ async function refreshProdChallenges(controlLayer){
  * @returns {Promise<ChallengeOverlayData>}
  */
 async function refreshBetaChallenges(controlLayer){
-	const challenges = await fetchAndConvertHostChallenges("https://beta.bdoguessr.moe/challenges.json", {
-		method: "GET",
-		headers: {
-			"Authorization": `basic ${authToken}`
-		}
-	});
+	const challenges = await fetchAndConvertHostChallenges("https://beta.bdoguessr.moe/challenges.json", {	method: "GET", headers: { "Authorization": `basic ${authToken}`	} });
 
 	const overlays = {
-		"Beta Easy": L.layerGroup(await makeCircles(challenges.easy, "easy", 2)),
-		"Beta Medium": L.layerGroup(await makeCircles(challenges.medium, "medium", 2)),
-		"Beta Hard": L.layerGroup(await makeCircles(challenges.hard, "hard", 2)),
-		"Beta Impossible": L.layerGroup(await makeCircles(challenges.impossible, "impossible", 2))
+		"Easy (Beta)": L.layerGroup(await makeCircles(challenges.easy, "easy", 2)),
+		"Medium (Beta)": L.layerGroup(await makeCircles(challenges.medium, "medium", 2)),
+		"Hard (Beta)": L.layerGroup(await makeCircles(challenges.hard, "hard", 2)),
+		"Impossible (Beta)": L.layerGroup(await makeCircles(challenges.impossible, "impossible", 2))
 	};
 
 	const counts = {
@@ -944,28 +927,7 @@ async function refreshBetaChallenges(controlLayer){
 	};
 
 	if(!controlLayer){
-		const hasEasy = map.hasLayer(hostChallenges?.easyGroup);
-		const hasMedium = map.hasLayer(hostChallenges?.mediumGroup);
-		const hasHard = map.hasLayer(hostChallenges?.hardGroup);
-		const hasImpossible = map.hasLayer(hostChallenges?.impossibleGroup);
-
-		layerControl.removeLayer(hostChallenges.easyGroup);
-		layerControl.removeLayer(hostChallenges.mediumGroup);
-		layerControl.removeLayer(hostChallenges.hardGroup);
-		layerControl.removeLayer(hostChallenges.impossibleGroup);
-		map.removeLayer(hostChallenges.easyGroup);
-		map.removeLayer(hostChallenges.mediumGroup);
-		map.removeLayer(hostChallenges.hardGroup);
-		map.removeLayer(hostChallenges.impossibleGroup);
-
-		if(hasEasy) hostChallenges.easyGroup = overlays["Beta Easy"].addTo(map);
-		if(hasMedium) hostChallenges.mediumGroup = overlays["Beta Medium"].addTo(map);
-		if(hasHard) hostChallenges.hardGroup = overlays["Beta Hard"].addTo(map);
-		if(hasImpossible) hostChallenges.impossibleGroup = overlays["Beta Impossible"].addTo(map);
-		layerControl.addOverlay(hostChallenges.easyGroup, "Beta Easy");
-		layerControl.addOverlay(hostChallenges.mediumGroup, "Beta Medium");
-		layerControl.addOverlay(hostChallenges.hardGroup, "Beta Hard");
-		layerControl.addOverlay(hostChallenges.impossibleGroup, "Beta Impossible");
+		refreshCircles(betaChallenges, overlays, "Beta");
 
 		betaChallenges.count = counts;
 		return updateCounts(localChallenges.count, hostChallenges.count, counts);
@@ -974,10 +936,10 @@ async function refreshBetaChallenges(controlLayer){
 	return {
 		overlay: overlays,
 		count: counts,
-		easyGroup: overlays["Beta Easy"],
-		mediumGroup: overlays["Beta Medium"],
-		hardGroup: overlays["Beta Hard"],
-		impossibleGroup: overlays["Beta Impossible"]
+		easyGroup: overlays["Easy (Beta)"],
+		mediumGroup: overlays["Medium (Beta)"],
+		hardGroup: overlays["Hard (Beta)"],
+		impossibleGroup: overlays["Impossible (Beta)"]
 	};
 }
 
@@ -996,10 +958,10 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 	const challenges = await fetchAndConvertLocalChallenges(saveLocation + "/challenges.json");
 
 	const overlays = {
-		"Easy": L.layerGroup(await makeCircles(challenges.easy, "easy")),
-		"Medium": L.layerGroup(await makeCircles(challenges.medium, "medium")),
-		"Hard": L.layerGroup(await makeCircles(challenges.hard, "hard")),
-		"Impossible": L.layerGroup(await makeCircles(challenges.impossible, "impossible"))
+		"Easy (Local)": L.layerGroup(await makeCircles(challenges.easy, "easy")),
+		"Medium (Local)": L.layerGroup(await makeCircles(challenges.medium, "medium")),
+		"Hard (Local)": L.layerGroup(await makeCircles(challenges.hard, "hard")),
+		"Impossible (Local)": L.layerGroup(await makeCircles(challenges.impossible, "impossible"))
 	};
 
 	const counts = {
@@ -1011,39 +973,25 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 
 
 	if(!controlLayer){
-		const hasEasy = map.hasLayer(localChallenges?.easyGroup);
-		const hasMedium = map.hasLayer(localChallenges?.mediumGroup);
-		const hasHard = map.hasLayer(localChallenges?.hardGroup);
-		const hasImpossible = map.hasLayer(localChallenges?.impossibleGroup);
-
-		layerControl.removeLayer(localChallenges.easyGroup);
-		layerControl.removeLayer(localChallenges.mediumGroup);
-		layerControl.removeLayer(localChallenges.hardGroup);
-		layerControl.removeLayer(localChallenges.impossibleGroup);
-		map.removeLayer(localChallenges.easyGroup);
-		map.removeLayer(localChallenges.mediumGroup);
-		map.removeLayer(localChallenges.hardGroup);
-		map.removeLayer(localChallenges.impossibleGroup);
-
-		if(hasEasy) localChallenges.easyGroup = overlays.Easy.addTo(map);
-		if(hasMedium) localChallenges.mediumGroup = overlays.Medium.addTo(map);
-		if(hasHard) localChallenges.hardGroup = overlays.Hard.addTo(map);
-		if(hasImpossible) localChallenges.impossibleGroup = overlays.Impossible.addTo(map);
-		layerControl.addOverlay(localChallenges.easyGroup, "Easy");
-		layerControl.addOverlay(localChallenges.mediumGroup, "Medium");
-		layerControl.addOverlay(localChallenges.hardGroup, "Hard");
-		layerControl.addOverlay(localChallenges.impossibleGroup, "Impossible");
+		refreshCircles(localChallenges, overlays, "Local");
 
 		localChallenges.count = counts;
 		return updateCounts(counts, hostChallenges.count, betaChallenges.count);
 	}
 
-	const easyGroup = overlays.Easy.addTo(map);
-	const mediumGroup = overlays.Medium.addTo(map);
-	const hardGroup = overlays.Hard.addTo(map);
-	const impossibleGroup = overlays.Impossible.addTo(map);
+	const easyGroup = overlays["Easy (Local)"].addTo(map);
+	const mediumGroup = overlays["Medium (Local)"].addTo(map);
+	const hardGroup = overlays["Hard (Local)"].addTo(map);
+	const impossibleGroup = overlays["Impossible (Local)"].addTo(map);
 
-	return { overlay: overlays, count: counts, easyGroup, mediumGroup, hardGroup, impossibleGroup };
+	return {
+		overlay: overlays,
+		count: counts,
+		easyGroup,
+		mediumGroup,
+		hardGroup,
+		impossibleGroup
+	};
 }
 
 
@@ -1093,11 +1041,34 @@ function disableInfoPanel(){
 	infoHint.value = "";
 	infoFact.value = "";
 	infoDifficulty.value = "";
-	infoIsHost.checked = false;
-	infoIsBeta.checked = false;
 	updateTags = [];
 	activePopup = null;
 	currentChallenge = null;
+}
+
+function refreshCircles(challenges, overlays, type){
+	const hasEasy = map.hasLayer(challenges?.easyGroup);
+	const hasMedium = map.hasLayer(challenges?.mediumGroup);
+	const hasHard = map.hasLayer(challenges?.hardGroup);
+	const hasImpossible = map.hasLayer(challenges?.impossibleGroup);
+
+	layerControl.removeLayer(challenges.easyGroup);
+	layerControl.removeLayer(challenges.mediumGroup);
+	layerControl.removeLayer(challenges.hardGroup);
+	layerControl.removeLayer(challenges.impossibleGroup);
+	map.removeLayer(challenges.easyGroup);
+	map.removeLayer(challenges.mediumGroup);
+	map.removeLayer(challenges.hardGroup);
+	map.removeLayer(challenges.impossibleGroup);
+
+	if(hasEasy) challenges.easyGroup = overlays[`Easy (${type})`].addTo(map);
+	if(hasMedium) challenges.mediumGroup = overlays[`Medium (${type})`].addTo(map);
+	if(hasHard) challenges.hardGroup = overlays[`Hard (${type})`].addTo(map);
+	if(hasImpossible) challenges.impossibleGroup = overlays[`Impossible (${type})`].addTo(map);
+	layerControl.addOverlay(challenges.easyGroup, `Easy (${type})`);
+	layerControl.addOverlay(challenges.mediumGroup, `Medium (${type})`);
+	layerControl.addOverlay(challenges.hardGroup, `Hard (${type})`);
+	layerControl.addOverlay(challenges.impossibleGroup, `Impossible (${type})`);
 }
 
 async function getBetaImage(imgUrl){
@@ -1110,4 +1081,22 @@ async function getBetaImage(imgUrl){
 
 	const blob = await response.blob();
 	return URL.createObjectURL(blob);
+}
+
+function layerSortFunction(_a, _b, a, b){
+	// Local before Prod before Beta
+	if(a.charAt(0) === b.charAt(0)){ // They are both the same difficulty
+		if(a.includes("Local")) return -1; // Local always first
+		if(b.includes("Local")) return 1; // Local always first
+		if(a.includes("Prod")) return 1; // Prod always last
+		if(b.includes("Prod")) return -1; // Prod always last
+	}
+
+	// Easy before Medium befoire Hard before Impossible
+	if(a.includes("Easy")) return -1; // Easy always first
+	if(b.includes("Easy")) return 1; // Easy always first
+	if(a.includes("Impossible")) return 1; // Impossible always last
+	if(b.includes("Impossible")) return -1; // Impossible always last
+	if(a.includes("Medium") && b.includes("Hard")) return -1; // Medium before Hard
+	if(a.includes("Hard") && b.includes("Medium")) return 1; // Hard before Medium
 }
