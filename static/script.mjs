@@ -1,6 +1,8 @@
 /* global L:readonly */
 /** @typedef {import("Leaflet")} L */
 
+initialStartupStatus("Loading script.js...");
+
 /**
  * @typedef Latlng
  * @property {string} lat
@@ -167,6 +169,8 @@ const saveLocation = await window.electronAPI.getSaveLocation();
 const authToken = await window.electronAPI.getAuth();
 if(!authToken) window.location.href = "./login.html"; // If we don't have an auth token, redirect to login page
 
+
+initialStartupStatus("Setting up leaflet...");
 /** *****************************
  *                              *
  *        Leaflet Setup         *
@@ -244,8 +248,8 @@ map.on("click", (ev) => {
 });
 
 
-const hostChallenges = await refreshProdChallenges(true); // Get challangesfrom bdoguesser
 const localChallenges = await refreshLocalChallenges(true); // Get challenges from local file
+const hostChallenges = await refreshProdChallenges(true); // Get challangesfrom bdoguesser
 const betaChallenges = await refreshBetaChallenges(true); // Get challenges from beta server
 
 const allOverlays = Object.assign(localChallenges.overlay, hostChallenges.overlay, betaChallenges.overlay);
@@ -260,6 +264,7 @@ const layerControl = L.control.layers(tiles, allOverlays, controlLayerOptions).a
 updateCounts(localChallenges.count, hostChallenges.count, betaChallenges.count); // Update the counts on the page
 
 
+initialStartupStatus("Setting up event listeners...");
 /** *****************************
  *                              *
  *          Open File           *
@@ -482,6 +487,7 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	displayStatusMessage(response);
 	await refreshLocalChallenges();
 	await refreshBetaChallenges();
+	await refreshProdChallenges();
 
 	syncToServerBtn.disabled = false;
 	uploadFileBtn.disabled = false;
@@ -602,6 +608,7 @@ editSectionBtn.addEventListener("click", swapToEditSection);
 addSectionBtn.addEventListener("click", swapToAddSection);
 
 
+initialStartupStatus("Enabling ui elements...");
 // Enable the buttons after all the event listeners have been added.
 latInput.disabled = false;
 lngInput.disabled = false;
@@ -610,10 +617,9 @@ challengeHint.disabled = false;
 challengeFact.disabled = false;
 tagInput.disabled = false;
 uploadFileBtn.disabled = false;
-
 syncToServerBtn.disabled = false;
 
-
+initialStartupStatus("Done! Enjoy :)", true);
 
 /**
  ********************************
@@ -777,15 +783,16 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
 		};
 		if(type === 0) circle.bindPopup(`<img class="imgPreview" src="${saveLocation}/screenshots/${item.src}">`, popupOptions);
 		if(type === 1) circle.bindPopup(`<img class="imgPreview" src="https://bdoguessr.moe/${item.src}">`, popupOptions);
-		if(type === 2){
-			const imgUrl = `https://beta.bdoguessr.moe/${item.src}`;
-			const imgSrc = await getBetaImage(imgUrl);
-			circle.bindPopup(`<img class="imgPreview" src="${imgSrc}">`, popupOptions);
-		}
+		if(type === 2) circle.bindPopup(`<img class="imgPreview">`, popupOptions);
 
 		circle.on("click", async (evt) => {
 			L.DomEvent.stopPropagation(evt);
 			circle.openPopup();
+			if(type === 2){
+				const imgUrl = `https://beta.bdoguessr.moe/${item.src}`;
+				const img = await getBetaImage(imgUrl);
+				circle.getPopup().setContent(`<img class="imgPreview" src="${img}">`);
+			}
 			activePopup = circle;
 			currentChallenge = item;
 
@@ -867,6 +874,7 @@ function updateCounts(localCount, hostCount, betaCount){
  * @returns {Promise<ChallengeOverlayData>}
  */
 async function refreshProdChallenges(controlLayer){
+	initialStartupStatus("Loading prod challenges...");
 	const challenges = await fetchAndConvertHostChallenges("https://bdoguessr.moe/challenges.json");
 
 	const overlays = {
@@ -912,7 +920,13 @@ async function refreshProdChallenges(controlLayer){
  * @returns {Promise<ChallengeOverlayData>}
  */
 async function refreshBetaChallenges(controlLayer){
-	const challenges = await fetchAndConvertHostChallenges("https://beta.bdoguessr.moe/challenges.json", {	method: "GET", headers: { "Authorization": `basic ${authToken}`	} });
+	if(controlLayer) initialStartupStatus("Loading beta challenges...");
+	const challenges = await fetchAndConvertHostChallenges("https://beta.bdoguessr.moe/challenges.json", {
+		method: "GET",
+		headers: {
+			"Authorization": `basic ${authToken}`
+		}
+	});
 
 	const overlays = {
 		"Easy (Beta)": L.layerGroup(await makeCircles(challenges.easy, "easy", 2)),
@@ -957,6 +971,7 @@ async function refreshBetaChallenges(controlLayer){
  * @returns {Promise<ChallengeOverlayData>}
  */
 async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
+	if(controlLayer) initialStartupStatus("Loading local challenges...");
 	const challenges = await fetchAndConvertLocalChallenges(saveLocation + "/challenges.json");
 
 	const overlays = {
@@ -1071,6 +1086,16 @@ function refreshCircles(challenges, overlays, type){
 	layerControl.addOverlay(challenges.mediumGroup, `Medium (${type})`);
 	layerControl.addOverlay(challenges.hardGroup, `Hard (${type})`);
 	layerControl.addOverlay(challenges.impossibleGroup, `Impossible (${type})`);
+}
+
+function initialStartupStatus(message, hide = false){
+	console.log(message);
+	document.getElementById("statusMessage").textContent = message;
+	if(hide){
+		setTimeout(() => {
+			statusContainer.style.top = "";
+		}, 3000);
+	}
 }
 
 async function getBetaImage(imgUrl){
