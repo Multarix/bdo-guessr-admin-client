@@ -54,10 +54,14 @@
  * @property {L.LayerGroup|undefined} Medium
  * @property {L.LayerGroup|undefined} Hard
  * @property {L.LayerGroup|undefined} Impossible
- * @property {L.LayerGroup|undefined} `Host Easy`
- * @property {L.LayerGroup|undefined} `Host Medium`
- * @property {L.LayerGroup|undefined} `Host Hard`
- * @property {L.LayerGroup|undefined} `Host Impossible`
+ * @property {L.LayerGroup|undefined} `Prod Easy`
+ * @property {L.LayerGroup|undefined} `Prod Medium`
+ * @property {L.LayerGroup|undefined} `Prod Hard`
+ * @property {L.LayerGroup|undefined} `Prod Impossible`
+ * @property {L.LayerGroup|undefined} `Beta Easy`
+ * @property {L.LayerGroup|undefined} `Beta Medium`
+ * @property {L.LayerGroup|undefined} `Beta Hard`
+ * @property {L.LayerGroup|undefined} `Beta Impossible`
 */
 
 /**
@@ -323,7 +327,6 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
  ***************************** **/
 updateChallengeBtn.addEventListener("click", async (evt) => {
 	evt.preventDefault();
-
 	if(!currentChallenge) return;
 
 	// Host Update
@@ -366,19 +369,17 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 
 	const data = {
 		difficulty: infoDifficulty.value,
-		oldDifficulty: currentChallenge.difficulty,
 		hint: infoHint.value,
 		fact: infoFact.value,
 		tags: updateTags,
-		src: currentChallenge.src,
-		actualLocation: currentChallenge.actualLocation
+		src: currentChallenge.src
 	};
 
 	/** @type {ElectronResponse} */
-	const response = await window.electronAPI.updateChallenge(data);
-	displayStatusMessage(response);
+	const responseFromMain = await window.electronAPI.updateChallenge(data);
+	displayStatusMessage(responseFromMain);
 
-	if(response.code === 200){
+	if(responseFromMain.code === 200){
 		disableInfoPanel();
 
 		await refreshLocalChallenges();
