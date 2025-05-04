@@ -35,10 +35,7 @@ const bdoScreenshotFolder = path.join(app.getPath("documents"), "Black Desert/Sc
 
 /**
  * @typedef ChallengeFile
- * @property {ChallengeData[]} easy
- * @property {ChallengeData[]} medium
- * @property {ChallengeData[]} hard
- * @property {ChallengeData[]} impossible
+ * @property {ChallengeData[]} challenges
  * @property {string} auth
  */
 
@@ -68,12 +65,12 @@ const saveChallenges = async () => {
 };
 
 
+
 /* **************************** */
 /*                              */
 /*           Set Auth           */
 /*                              */
 /* **************************** */
-
 async function setAuth(_event, auth){
 	if(auth === ""){
 		challengeFile.auth = "";
@@ -100,12 +97,12 @@ async function setAuth(_event, auth){
 }
 
 
+
 /* **************************** */
 /*                              */
 /*          Open File           */
 /*                              */
 /* **************************** */
-
 async function openFile(){
 	const options = {
 		defaultPath: app.getPath("home"),
@@ -124,31 +121,22 @@ async function openFile(){
 }
 
 
+
 /* **************************** */
 /*                              */
 /*       Update Challenge       */
 /*                              */
 /* **************************** */
-
 async function handleUpdateChallenge(_event, data){
-	const oldDiff = invertDifficultyFormat[data.oldDifficulty];	// To String
-	const newDiff = invertDifficultyFormat[data.difficulty];	// To String
-
 	// Make sure the challenge exists and all that jazz
-	const original = challengeFile[oldDiff].findIndex((item) => item.src === data.src);
+	const original = challengeFile.challenges.findIndex((item) => item.src === data.src);
 	if(original === -1) return { code: 404, message: "That challenge seems to be missing." };
 
 	// Update the entry
-	challengeFile[oldDiff][original].fact = data.fact;
-	challengeFile[oldDiff][original].hint = data.hint;
-	challengeFile[oldDiff][original].difficulty = data.difficulty;
-	challengeFile[oldDiff][original].tags = data.tags;
-
-	// If the difficulty changed, move the entry to the new difficulty
-	if(data.oldDifficulty !== data.difficulty){
-		challengeFile[newDiff].push(challengeFile[oldDiff][original]);
-		challengeFile[oldDiff].splice(original, 1);
-	}
+	challengeFile[original].fact = data.fact;
+	challengeFile[original].hint = data.hint;
+	challengeFile[original].difficulty = data.difficulty;
+	challengeFile[original].tags = data.tags;
 
 	const saveSuccess = await saveChallenges();
 	if(saveSuccess) return { code: 200, message: "Challenge updated successfully." };
@@ -156,21 +144,18 @@ async function handleUpdateChallenge(_event, data){
 }
 
 
+
 /* **************************** */
 /*                              */
 /*       Delete Challenge       */
 /*                              */
 /* **************************** */
-
 async function handleDeleteChallenge(_event, data){
-	// Make sure the challenge exists and all that jazz
-	const difficulty = invertDifficultyFormat[data.difficulty];
-
-	const original = challengeFile[difficulty].findIndex((item) => item.src === data.src);
+	const original = challengeFile.challenges.findIndex((item) => item.src === data.src);
 	if(original === -1) return { code: 404, message: "That challenge seems to be missing." };
 
 	// Delete the entry
-	challengeFile[difficulty].splice(original, 1);
+	challengeFile.challenges.splice(original, 1);
 
 	// Move the file to "deleted" folder
 	const fileName = data.src.split("/").pop();
@@ -195,12 +180,12 @@ async function handleDeleteChallenge(_event, data){
 }
 
 
+
 /* **************************** */
 /*                              */
 /*         Form Submit          */
 /*                              */
 /* **************************** */
-
 async function handleFormSubmission(_event, form){
 	// Make sure the data is set correctly
 	if(!["1", "2", "3", "4"].includes(form.difficulty)) return { code: 400, message: "Difficulty should be 1, 2, 3 or 4" };
@@ -212,7 +197,7 @@ async function handleFormSubmission(_event, form){
 		const fileName = form.src.split("\\").pop();
 		const filePath = path.join(screenshotFolder, fileName);
 
-		// Copy and delete the old file (Janky but whatever)
+		// Copy and delete the old file (Janky but whatever, only way to support different drives)
 		await fsPromise.copyFile(form.src, filePath);
 		await fsPromise.unlink(form.src);
 
@@ -231,8 +216,7 @@ async function handleFormSubmission(_event, form){
 		};
 
 		// Add new entry
-		const diff = invertDifficultyFormat[form.difficulty]; // Converts the number to word
-		challengeFile[diff].push(newChallenge);
+		challengeFile.challenges.push(newChallenge);
 	} catch (e){
 		console.log(e);
 		return { code: 500, message: "Something went wrong with the request." };
@@ -244,18 +228,24 @@ async function handleFormSubmission(_event, form){
 }
 
 
+
 /* **************************** */
 /*                              */
 /*       Upload to Server       */
 /*                              */
 /* **************************** */
+async function upload(){
+	const window = BrowserWindow.getAllWindows()[0];
 
-async function upload(difficulty, win, successes){
+	let successes = 0;
+	let count = 0;
+
 	/** @type {ChallengeData[]} */
-	const challenges = challengeFile[difficulty];
-	if(challenges.length === 0) return successes;
+	if(challengeFile.challenges.length === 0) return 0;
+	const challengeCount = challengeFile.challenges.length;
 
-	for(const challenge of challenges){
+	for(const challenge of challengeFile.challenges){
+		count += 1;
 		try {
 			const screenshotLocation = path.join(screenshotFolder, challenge.src);
 			const blob = new Blob([await fsPromise.readFile(screenshotLocation)]);
@@ -283,8 +273,8 @@ async function upload(difficulty, win, successes){
 				const uploadedPath = path.join(uploadedFolder, fileName);
 
 				// Remove challenge from json
-				const index = challengeFile[difficulty].findIndex((item) => item.src === challenge.src);
-				if(index !== -1) challengeFile[difficulty].splice(index, 1);
+				const index = challengeFile.challenges.findIndex((item) => item.src === challenge.src);
+				if(index !== -1) challengeFile.challenges.splice(index, 1);
 
 				// Move the file to "uploaed" folder
 				if(!fs.existsSync(uploadedFolder)) fs.mkdirSync(uploadedFolder);
@@ -293,18 +283,18 @@ async function upload(difficulty, win, successes){
 
 				// Save the json
 				const saveSuccess = await saveChallenges();
-				if(saveSuccess) win.webContents.send("uploadStatus", { code: 200, message: `${fileName} was uploaded successfully.` });
+				if(saveSuccess) window.webContents.send("uploadStatus", { code: 200, message: `${fileName} was uploaded successfully. (${count}/${challengeCount})` });
 				successes += 1;
 
 				continue; // Go to next iteration
 			}
 
-			win.webContents.send("uploadStatus", { code: 500, message: `${fileName} failed to upload.` });
+			window.webContents.send("uploadStatus", { code: 500, message: `${fileName} failed to upload.` });
 			continue;
 
 		} catch (e){
 			console.log(e);
-			win.webContents.send("uploadStatus", { code: 500, message: "Something went wrong with the request." });
+			window.webContents.send("uploadStatus", { code: 500, message: "Something went wrong with the request." });
 			continue;
 		}
 	}
@@ -313,29 +303,18 @@ async function upload(difficulty, win, successes){
 }
 
 
+
 /* **************************** */
 /*                              */
 /*        Sync to Server        */
 /*                              */
 /* **************************** */
-
 async function syncChallengesToServer(){
-	const challengeCount = challengeFile["easy"].length + challengeFile["medium"].length + challengeFile["hard"].length + challengeFile["impossible"].length;
+	const challengeCount = challengeFile.challenges.length;
 	if(challengeCount === 0) return { code: 400, message: "No challenges were available to upload." };
-	const win = BrowserWindow.getAllWindows()[0];
 
-	let successes = 0;
-	console.log("Starting upload of easy...");
-	successes = await upload("easy", win, successes);
-
-	console.log("Starting upload of medium...");
-	successes = await upload("medium", win, successes);
-
-	console.log("Starting upload of hard...");
-	successes = await upload("hard", win, successes);
-
-	console.log("Starting upload of impossible...");
-	successes = await upload("impossible", win, successes);
+	console.log("Starting upload of challenges...");
+	const successes = await upload();
 
 	await new Promise((resolve) => {
 		setTimeout(() => {
@@ -353,7 +332,6 @@ async function syncChallengesToServer(){
 /*        Electron Setup        */
 /*                              */
 /* **************************** */
-
 const createWindow = () => {
 	const initialPage = (challengeFile.auth) ? "./index.html" : "./login.html";
 
