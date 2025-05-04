@@ -287,13 +287,17 @@ async function upload(){
 
 				// Save the json
 				const saveSuccess = await saveChallenges();
-				if(saveSuccess) window.webContents.send("uploadStatus", { code: 200, message: `${fileName} was uploaded successfully. (${count}/${challengeCount})` });
+				const uploadStatus = { code: 200, message: `${fileName} was uploaded successfully. (${count}/${challengeCount})` };
+				console.log(uploadStatus.message);
+				if(saveSuccess) window.webContents.send("uploadStatus", uploadStatus);
 				successes += 1;
 
 				continue; // Go to next iteration
 			}
 
-			window.webContents.send("uploadStatus", { code: 500, message: `${fileName} failed to upload.` });
+			const uploadStatus = { code: 200, message: `${fileName} failed to upload. (${count}/${challengeCount})` };
+			console.log(uploadStatus.message);
+			window.webContents.send("uploadStatus", uploadStatus);
 			continue;
 
 		} catch (e){
