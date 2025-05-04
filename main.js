@@ -298,7 +298,6 @@ async function upload(){
 			const uploadStatus = { code: 200, message: `${fileName} failed to upload. (${count}/${challengeCount})` };
 			console.log(uploadStatus.message);
 			window.webContents.send("uploadStatus", uploadStatus);
-			continue;
 
 		} catch (e){
 			console.log(e);
