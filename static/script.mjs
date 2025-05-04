@@ -482,12 +482,20 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	syncText.style.display = "none";
 	syncLoad.style.display = "block";
 
-	/** @type {ElectronResponse} */
-	const response = await window.electronAPI.syncToServer();
-	displayStatusMessage(response);
-	await refreshLocalChallenges();
+	let totalCount = localChallenges.count.easy + localChallenges.count.medium + localChallenges.count.hard + localChallenges.count.impossible;
+	while(totalCount > 0){
+		/** @type {ElectronResponse} */
+		const response = await window.electronAPI.syncToServer();
+		displayStatusMessage(response);
+		await refreshLocalChallenges();
+		totalCount = localChallenges.count.easy + localChallenges.count.medium + localChallenges.count.hard + localChallenges.count.impossible;
+	}
+
+
 	await refreshBetaChallenges();
 	await refreshProdChallenges();
+
+
 
 	syncToServerBtn.disabled = false;
 	uploadFileBtn.disabled = false;
@@ -874,7 +882,7 @@ function updateCounts(localCount, hostCount, betaCount){
  * @returns {Promise<ChallengeOverlayData>}
  */
 async function refreshProdChallenges(controlLayer){
-	initialStartupStatus("Loading prod challenges...");
+	if(controlLayer) initialStartupStatus("Loading prod challenges...");
 	const challenges = await fetchAndConvertHostChallenges("https://bdoguessr.moe/challenges.json");
 
 	const overlays = {
