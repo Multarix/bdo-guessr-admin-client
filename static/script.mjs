@@ -275,6 +275,7 @@ uploadFileBtn.addEventListener("click", async (evt) => {
 	document.getElementById("fileName").value = realPath.split("\\").pop();
 	document.getElementById("filePath").value = realPath;
 
+	if(!filePath) return submitFormBtn.disabled = true;
 	submitFormBtn.disabled = false;
 });
 
