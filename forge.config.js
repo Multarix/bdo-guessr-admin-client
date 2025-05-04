@@ -6,7 +6,8 @@ module.exports = {
 		asar: true,
 		name: "BDOGuessr_Admin",
 		icon: "./icon",
-		ignore: "^/data"
+		ignore: "^/data",
+		appVersion: "1.1.0"
 	},
 	rebuildConfig: {},
 	makers: [
@@ -14,32 +15,28 @@ module.exports = {
 			name: '@electron-forge/maker-squirrel',
 			config: {
 				description: 'BDOGuessr admin client',
-				shortName: 'BDOGuessr',
-				version: '1.0.0'
+				shortName: 'BDOGuessr'
 			}
 		},
 		{
 			name: '@electron-forge/maker-zip',
 			config: {
 				description: 'BDOGuessr admin client',
-				shortName: 'BDOGuessr',
-				version: '1.0.0'
+				shortName: 'BDOGuessr'
 			}
 		},
 		{
 			name: '@electron-forge/maker-deb',
 			config: {
 				description: 'BDOGuessr admin client',
-				shortName: 'BDOGuessr',
-				version: '1.0.0'
+				shortName: 'BDOGuessr'
 			}
 		},
 		{
 			name: '@electron-forge/maker-rpm',
 			config: {
 				description: 'BDOGuessr admin client',
-				shortName: 'BDOGuessr',
-				version: '1.0.0'
+				shortName: 'BDOGuessr'
 			}
 		}
 	],
