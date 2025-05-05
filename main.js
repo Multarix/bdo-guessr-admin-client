@@ -242,13 +242,14 @@ async function upload(){
 	const window = BrowserWindow.getAllWindows()[0];
 
 	let successes = 0;
-	const challenges = challengeFile.challenges;
-	const challengeCount = challenges.length;
-	if(challengeCount === 0) return 0;
+	let failures = 0;
+	const fullChallengeCount = challengeFile.challenges.length;
 
-	for(let i = 0; i < challengeCount; i++){
-		const challenge = challenges[i];
-		const count = i + 1;
+	if(challengeFile.challenges.length === 0) return 0;
+
+	while(challengeFile.challenges.length > failures){
+		const challenge = challengeFile.challenges[failures];
+		const count = successes + failures;
 
 		try {
 			const screenshotLocation = path.join(screenshotFolder, challenge.src);
@@ -290,7 +291,7 @@ async function upload(){
 
 				// Save the json
 				const saveSuccess = await saveChallenges();
-				const uploadStatus = { code: 200, message: `${fileName} was uploaded successfully. (${count}/${challengeCount})` };
+				const uploadStatus = { code: 200, message: `${fileName} was uploaded successfully. (${count}/${fullChallengeCount})` };
 				console.log(uploadStatus.message);
 				if(saveSuccess) window.webContents.send("uploadStatus", uploadStatus);
 
@@ -298,14 +299,15 @@ async function upload(){
 				continue; // Go to next iteration+
 			}
 
-			const uploadStatus = { code: 200, message: `${fileName} failed to upload. (${count}/${challengeCount})` };
+			const uploadStatus = { code: 200, message: `${fileName} failed to upload. (${count}/${fullChallengeCount})` };
 			console.log(uploadStatus.message);
 			window.webContents.send("uploadStatus", uploadStatus);
+			failures += 1;
 
 		} catch (e){
 			console.log(e);
 			window.webContents.send("uploadStatus", { code: 500, message: "Something went wrong with the request." });
-			continue;
+			failures += 1;
 		}
 	}
 
