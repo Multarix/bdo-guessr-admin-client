@@ -240,6 +240,7 @@ async function handleFormSubmission(_event, form){
 /* **************************** */
 async function upload(){
 	const window = BrowserWindow.getAllWindows()[0];
+	// const uploadedChallenges = ();
 
 	let successes = 0;
 	let failures = 0;
@@ -249,28 +250,28 @@ async function upload(){
 
 	while(challengeFile.challenges.length > failures){
 		const challenge = challengeFile.challenges[failures];
-		const count = successes + failures;
+		const count = successes + failures + 1;
 
 		try {
 			const screenshotLocation = path.join(screenshotFolder, challenge.src);
 			const blob = new Blob([await fsPromise.readFile(screenshotLocation)]);
 			const fileName = challenge.src.split("/").pop();
 
-			const body = new FormData();
-			body.append("lat", challenge.actualLocation.lat);
-			body.append("lng", challenge.actualLocation.lng);
-			body.append("difficulty", challenge.difficulty);
-			body.append("tags", challenge.tags);
-			body.append("hint", challenge.hint);
-			body.append("fact", challenge.fact);
-			body.set("screenshot", blob, fileName);
+			const formData = new FormData();
+			formData.set("lat", challenge.actualLocation.lat);
+			formData.set("lng", challenge.actualLocation.lng);
+			formData.set("difficulty", challenge.difficulty);
+			formData.set("fact", challenge.fact);
+			formData.set("hint", challenge.hint);
+			formData.set("tags", JSON.stringify(challenge.tags));
+			formData.set("screenshot", blob, fileName);
 
 			const response = await fetch("https://beta.bdoguessr.moe/upload", {
 				method: "POST",
 				headers: {
 					"Authorization": `Basic ${challengeFile.auth}`
 				},
-				body
+				body: formData
 			});
 
 			if(response.status === 200){
