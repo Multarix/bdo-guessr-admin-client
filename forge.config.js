@@ -7,7 +7,7 @@ module.exports = {
 		name: "BDOGuessr_Admin",
 		icon: "./icon",
 		ignore: "^/data",
-		appVersion: "1.1.0"
+		appVersion: "1.1.1"
 	},
 	rebuildConfig: {},
 	makers: [
