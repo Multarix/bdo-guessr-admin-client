@@ -537,24 +537,31 @@ tagInput.addEventListener("keypress", (evt) => {
 	const allowedCharacters = /[a-zA-Z]/;
 	if(!allowedCharacters.test(evt.key) && evt.key !== "Backspace" && evt.key !== "Enter" && evt.key !== " ") return evt.preventDefault();
 
-	const cleaned = tagInput.value.trim().toLowerCase();
-	if(evt.key === "Enter" && cleaned.length > 0 || evt.key === " " && cleaned.length > 0){
-		tagInput.value = "";
+	const initialClean = tagInput.value.trim().toLowerCase();
+	const split = initialClean.split(/\s+/); // Supports copy pasting multiple tags, it'll auto split em
 
-		if(!submitTags.includes(cleaned)){
-			submitTags.push(cleaned);
+	if(evt.key === "Enter" && initialClean.length > 0 || evt.key === " " && initialClean.length > 0){
+		tagInput.value = ""; // Clear the input
+
+		for(const item of split){
+			const itemCleaned = item.trim();
+			if(itemCleaned.length < 1) continue; // Ignore empty tags
+			if(submitTags.includes(item)) continue; // Ignore duplicate tags
+
+			submitTags.push(itemCleaned);
 
 			const tag = document.createElement("span");
 			tag.classList.add("tag");
-			tag.textContent = cleaned;
+			tag.textContent = itemCleaned;
 
 			// On click, remove the tag
 			tag.addEventListener("click", () => {
-				submitTags.splice(submitTags.indexOf(cleaned), 1);
+				submitTags.splice(submitTags.indexOf(itemCleaned), 1);
 				tag.remove();
 			});
 
 			tagContainer.appendChild(tag);
+
 		}
 	}
 });
@@ -570,20 +577,26 @@ infoTagInput.addEventListener("keypress", (evt) => {
 	const allowedCharacters = /[a-zA-Z]/;
 	if(!allowedCharacters.test(evt.key) && evt.key !== "Backspace" && evt.key !== "Enter" && evt.key !== " ") return evt.preventDefault();
 
-	const cleaned = infoTagInput.value.trim().toLowerCase();
-	if(evt.key === "Enter" && cleaned.length > 0 || evt.key === " " && cleaned.length > 0){
-		infoTagInput.value = "";
+	const initialClean = infoTagInput.value.trim().toLowerCase();
+	const split = initialClean.split(/\s+/); // Supports copy pasting multiple tags, it'll auto split em
 
-		if(!updateTags.includes(cleaned)){
-			updateTags.push(cleaned);
+	if(evt.key === "Enter" && initialClean.length > 0 || evt.key === " " && initialClean.length > 0){
+		infoTagInput.value = ""; // Clear the input
+
+		for(const item of split){
+			const itemCleaned = item.trim();
+			if(itemCleaned.length < 1) continue; // Ignore empty tags
+			if(updateTags.includes(item)) continue; // Ignore duplicate tags
+
+			updateTags.push(itemCleaned);
 
 			const tag = document.createElement("span");
 			tag.classList.add("tag");
-			tag.textContent = cleaned;
+			tag.textContent = itemCleaned;
 
 			// On click, remove the tag
 			tag.addEventListener("click", () => {
-				updateTags.splice(updateTags.indexOf(cleaned), 1);
+				updateTags.splice(updateTags.indexOf(itemCleaned), 1);
 				tag.remove();
 			});
 
@@ -774,9 +787,11 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
 	const circles = [];
 
 	for(const item of difficultyArray){
+		const fill = (item?.tags?.length > 0) ? fillColor[difficulty] : "#FF00FF"; // Purple for no tags;
+
 		const circle = L.circleMarker(item.actualLocation, {
 			color: "#000000",
-			fillColor: fillColor[difficulty],
+			fillColor: fill,
 			fillOpacity: (type > 0) ? 0.5 : 1,
 			radius: 8,
 			weight: 1
@@ -793,11 +808,7 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
 		circle.on("click", async (evt) => {
 			L.DomEvent.stopPropagation(evt);
 			circle.openPopup();
-			if(type === 2){
-				const imgUrl = `https://beta.bdoguessr.moe/${item.src}`;
-				const img = await getBetaImage(imgUrl);
-				circle.getPopup().setContent(`<img class="imgPreview" src="${img}">`);
-			}
+
 			activePopup = circle;
 			currentChallenge = item;
 
@@ -832,6 +843,13 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
 
 			enableInfoPanel();
 			swapToEditSection();
+
+			// This ensures everything gets swapped, and then we worry about loading the image
+			if(type === 2){
+				const imgUrl = `https://beta.bdoguessr.moe/${item.src}`;
+				const img = await getBetaImage(imgUrl);
+				circle.getPopup().setContent(`<img class="imgPreview" src="${img}">`);
+			}
 		});
 
 		circle.on("popupclose", () => {
