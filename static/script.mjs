@@ -482,14 +482,11 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	syncText.style.display = "none";
 	syncLoad.style.display = "block";
 
-	let totalCount = localChallenges.count.easy + localChallenges.count.medium + localChallenges.count.hard + localChallenges.count.impossible;
-	while(totalCount > 0){
-		/** @type {ElectronResponse} */
-		const response = await window.electronAPI.syncToServer();
-		displayStatusMessage(response);
-		await refreshLocalChallenges();
-		totalCount = localChallenges.count.easy + localChallenges.count.medium + localChallenges.count.hard + localChallenges.count.impossible;
-	}
+
+	/** @type {ElectronResponse} */
+	const response = await window.electronAPI.syncToServer();
+	displayStatusMessage(response);
+	await refreshLocalChallenges();
 
 
 	await refreshBetaChallenges();
