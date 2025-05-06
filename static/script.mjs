@@ -737,7 +737,7 @@ async function fetchAndConvertHostChallenges(url, options = {}){
 async function fetchAndConvertLocalChallenges(url){
 	const response = await fetch(url);
 	const challengeFile = await response.json();
-	if(challengeFile.auth) document.getElementById("syncContainer").style.display = "";
+	if(authToken.auth) document.getElementById("syncContainer").style.display = "";
 
 	const obj = {};
 
