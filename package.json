@@ -1,13 +1,13 @@
 {
   "name": "bdoguessr",
-  "version": "1.1.3",
+  "version": "1.1.4",
   "description": "Local admin client for BDOGuessr",
   "main": "main.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-	"prepublish": "npm version patch",
+    "prepublish": "npm version patch",
     "publish": "electron-forge make"
   },
   "author": "Multarix",
