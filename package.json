@@ -7,7 +7,6 @@
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
-    "prepublish": "npm version patch",
     "publish": "electron-forge make"
   },
   "author": "Multarix",
