@@ -420,7 +420,7 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 
 	// Host delete
 	if(infoIsHost.checked){
-		const url = (infoIsBeta.checked) ? "https://beta.bdoguessr.moe/update_difficulty" : "https://bdoguessr.moe/update_difficulty";
+		const url = (infoIsBeta.checked) ? "https://beta.bdoguessr.moe/delete_challenge" : "https://bdoguessr.moe/delete_challenge";
 		const response = await fetch(url, {
 			method: "POST",
 			headers: {
@@ -804,9 +804,13 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
 			"maxWidth": 600,
 			"className": "imgPopup"
 		};
-		if(type === 0) circle.bindPopup(`<img class="imgPreview" src="${saveLocation}/screenshots/${item.src}">`, popupOptions);
-		if(type === 1) circle.bindPopup(`<img class="imgPreview" src="https://bdoguessr.moe/${item.src}">`, popupOptions);
-		if(type === 2) circle.bindPopup(`<img class="imgPreview">`, popupOptions);
+
+		const popup = L.popup(popupOptions);
+		if(type === 0) popup.setContent(`<img class="imgPreview" src="${saveLocation}/screenshots/${item.src}">`, popupOptions);
+		if(type === 1) popup.setContent(`<img class="imgPreview" src="https://bdoguessr.moe/${item.src}">`, popupOptions);
+		if(type === 2) popup.setContent(`<img class="imgPreview">`, popupOptions);
+
+		circle.bindPopup(popup);
 
 		circle.on("click", async (evt) => {
 			L.DomEvent.stopPropagation(evt);
