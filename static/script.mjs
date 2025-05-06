@@ -166,8 +166,10 @@ const convertDifficulty = {
 /** @type {string} */
 const saveLocation = await window.electronAPI.getSaveLocation();
 /** @type {string} */
+
+
 const authToken = await window.electronAPI.getAuth();
-if(!authToken) window.location.href = "./login.html"; // If we don't have an auth token, redirect to login page
+if(!authToken.auth) window.location.href = "./login.html"; // If we don't have an auth token, redirect to login page
 
 
 initialStartupStatus("Setting up leaflet...");
@@ -351,7 +353,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 			method: "POST",
 			headers: {
 				'Content-Type': 'application/json',
-				"Authorization": `basic ${authToken}`
+				"Authorization": `basic ${authToken.auth}`
 			},
 			body: JSON.stringify({
 				src: currentChallenge.src,
@@ -407,6 +409,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
  *                              *
  ***************************** **/
 deleteChallengeBtn.addEventListener("click", async (evt) => {
+	if(authToken.role !== "admin") return deleteChallengeBtn.disabled = true;
 	evt.preventDefault();
 
 	if(!currentChallenge) return;
@@ -422,7 +425,7 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 			method: "POST",
 			headers: {
 				'Content-Type': 'application/json',
-				"Authorization": `basic ${authToken}`
+				"Authorization": `basic ${authToken.auth}`
 			},
 			body: JSON.stringify({
 				src: currentChallenge.src
@@ -947,7 +950,7 @@ async function refreshBetaChallenges(controlLayer){
 	const challenges = await fetchAndConvertHostChallenges("https://beta.bdoguessr.moe/challenges.json", {
 		method: "GET",
 		headers: {
-			"Authorization": `basic ${authToken}`
+			"Authorization": `basic ${authToken.auth}`
 		}
 	});
 
@@ -1062,7 +1065,7 @@ function enableInfoPanel(){
 	infoFact.disabled = false;
 	infoTagInput.disabled = false;
 	updateChallengeBtn.disabled = false;
-	deleteChallengeBtn.disabled = false;
+	if(authToken.role === "admin") deleteChallengeBtn.disabled = false;
 }
 
 function disableInfoPanel(){
@@ -1125,7 +1128,7 @@ async function getBetaImage(imgUrl){
 	const response = await fetch(imgUrl, {
 		method: "GET",
 		headers: {
-			"Authorization": `basic ${authToken}`
+			"Authorization": `basic ${authToken.auth}`
 		}
 	});
 

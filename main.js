@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require("electron/main");
+const { app, BrowserWindow, ipcMain, dialog, globalShortcut } = require("electron/main");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
 const path = require('path');
@@ -24,7 +24,12 @@ const fsPromise = require("fs/promises");
 /**
  * @typedef ChallengeFile
  * @property {ChallengeData[]} challenges
+ */
+
+/**
+ * @typedef LoginFile
  * @property {string} auth
+ * @property {string} role
  */
 
 
@@ -42,19 +47,13 @@ if(!fs.existsSync(screenshotFolder)) fs.mkdirSync(screenshotFolder, { recursive:
 
 const bdoScreenshotFolder = path.join(app.getPath("documents"), "Black Desert/ScreenShot");
 
-const invertDifficultyFormat = {
-	"easy": 		"1",
-	"medium":		"2",
-	"hard":			"3",
-	"impossible":	"4",
-	"1":			"easy",
-	"2":			"medium",
-	"3":			"hard",
-	"4":			"impossible"
-};
+const loginPath = path.join(app.getPath("userData"), "config.json");
+if(!fs.existsSync(loginPath)) fs.writeFileSync(loginPath, JSON.stringify({ "auth": "", "role": "" }, null, "\t"), { encoding: "utf8" });
 
-// TODO: Swap between beta and prod server auth
-const getAuth = () => challengeFile.auth;
+/** @type {LoginFile} */
+const loginFile = require(loginPath);
+
+
 const getSaveLocation = () => saveLocation;
 const saveChallenges = async () => {
 	try {
@@ -67,36 +66,57 @@ const saveChallenges = async () => {
 };
 
 
+/* **************************** */
+/*                              */
+/*        Authorization         */
+/*                              */
+/* **************************** */
 
-/* **************************** */
-/*                              */
-/*           Set Auth           */
-/*                              */
-/* **************************** */
+const saveLoginInfo = async () => {
+	try {
+		await fsPromise.writeFile(loginPath, JSON.stringify(loginFile, null, "\t"), { encoding: "utf8" }); // Save the json
+		return true;
+	} catch (e){
+		console.log(e);
+		return false;
+	}
+};
+
 async function setAuth(_event, auth){
 	if(auth === ""){
-		challengeFile.auth = "";
+		loginFile.auth = "";
+		loginFile.role = "";
 
-		const saveSuccess = await saveChallenges();
+		const saveSuccess = await saveLoginInfo();
 		if(saveSuccess) return { code: 200, message: "Auth set successfully." };
 		return { code: 500, message: "Something went wrong with the request." };
 	}
 
 	// Check with the server if auth is valid, otherwise return an error to the user
-	const response = await fetch("https://beta.bdoguessr.moe/admin", {
-		method: "GET",
+	const response = await fetch("https://beta.bdoguessr.moe/auth", {
+		method: "POST",
 		headers: {
 			"Authorization": `Basic ${auth}`
 		}
 	});
 
 	if(response.status !== 200) return { code: 401, message: "Invalid username/ password." };
+	const data = await response.json();
 
-	challengeFile.auth = auth;
-	const saveSuccess = await saveChallenges();
-	if(saveSuccess) return { code: 200, message: "Auth set successfully." };
+	loginFile.auth = auth;
+	loginFile.role = data.role;
+
+	const saveSuccess = await saveLoginInfo();
+	if(saveSuccess) return { code: 200, message: `Auth set successfully. Logged in as a ${data.role}.` };
 	return { code: 500, message: "Something went wrong with the request." };
 }
+
+const getAuth = () => {
+	return {
+		auth: loginFile.auth,
+		role: loginFile.role
+	};
+};
 
 
 
@@ -269,7 +289,7 @@ async function upload(){
 			const response = await fetch("https://beta.bdoguessr.moe/upload", {
 				method: "POST",
 				headers: {
-					"Authorization": `Basic ${challengeFile.auth}`
+					"Authorization": `Basic ${loginFile.auth}`
 				},
 				body: formData
 			});
@@ -340,7 +360,7 @@ async function syncChallengesToServer(){
 /*                              */
 /* **************************** */
 const createWindow = () => {
-	const initialPage = (challengeFile.auth) ? "./index.html" : "./login.html";
+	const initialPage = (loginFile.auth) ? "./index.html" : "./login.html";
 
 	const win = new BrowserWindow({
 		width: 1840,
@@ -350,9 +370,17 @@ const createWindow = () => {
 		}
 	});
 
-
+	win.setMenu(null); // This hides the file/edit/view/ menu bar at the top of the window
 	win.loadFile(initialPage);
-	// win.setMenu(null); // This hides the file/edit/view/ menu bar at the top of the window
+
+
+	globalShortcut.register("f5", () => win.reload());
+	globalShortcut.register("CommandOrControl+R", () => win.reload());
+	globalShortcut.register("CommandOrControl+Shift+I", () => win.webContents.openDevTools());
+	globalShortcut.register("f11", () => {
+		if(!win.isFullScreen()) return win.setFullScreen(true);
+		return win.setFullScreen(false);
+	});
 };
 
 
