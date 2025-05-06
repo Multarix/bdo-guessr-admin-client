@@ -378,8 +378,8 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 
 		// Failed to update the challenge
 		return displayStatusMessage({
-			code: 500,
-			message: "Failed to update the challenge on the server."
+			code: response.status,
+			message: `${response.status} ${response.statusText}: Failed to update the challenge on the server.`
 		});
 	};
 
@@ -446,8 +446,8 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 
 		// Failed to update the challenge
 		return displayStatusMessage({
-			code: 500,
-			message: "Failed to delete the challenge from the server."
+			code: response.status,
+			message: `${response.status} ${response.statusText}: Failed to delete the challenge from the server.`
 		});
 	};
 
