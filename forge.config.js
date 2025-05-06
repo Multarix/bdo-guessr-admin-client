@@ -10,13 +10,13 @@ module.exports = {
 	},
 	rebuildConfig: {},
 	makers: [
-		{
-			name: '@electron-forge/maker-squirrel',
-			config: {
-				description: 'BDOGuessr admin client',
-				shortName: 'BDOGuessr'
-			}
-		},
+		// {
+		// 	name: '@electron-forge/maker-squirrel',
+		// 	config: {
+		// 		description: 'BDOGuessr admin client',
+		// 		shortName: 'BDOGuessr'
+		// 	}
+		// },
 		{
 			name: '@electron-forge/maker-zip',
 			config: {
