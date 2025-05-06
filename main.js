@@ -6,6 +6,8 @@ const path = require('path');
 const fs = require("fs");
 const fsPromise = require("fs/promises");
 
+const resourcesPath = (app.isPackaged) ? process.resourcesPath : path.join(__dirname, "/static/");
+
 /**
  * @typedef Latlng
  * @property {string} lat
@@ -259,8 +261,8 @@ async function handleFormSubmission(_event, form){
 /*       Upload to Server       */
 /*                              */
 /* **************************** */
-async function upload(){
-	const window = BrowserWindow.getAllWindows()[0];
+async function upload(win){
+	const window = win;
 	// const uploadedChallenges = ();
 
 	let successes = 0;
@@ -268,11 +270,12 @@ async function upload(){
 	const fullChallengeCount = challengeFile.challenges.length;
 
 	if(challengeFile.challenges.length === 0) return 0;
+	const progressIncrement = 1 / fullChallengeCount;
 
 	while(challengeFile.challenges.length > failures){
 		const challenge = challengeFile.challenges[failures];
 		const count = successes + failures + 1;
-
+		window.setProgressBar(count * progressIncrement); // Set the progress bar
 		try {
 			const screenshotLocation = path.join(screenshotFolder, challenge.src);
 			const blob = new Blob([await fsPromise.readFile(screenshotLocation)]);
@@ -347,8 +350,18 @@ async function syncChallengesToServer(){
 	const challengeCount = challengeFile.challenges.length;
 	if(challengeCount === 0) return { code: 400, message: "No challenges were available to upload." };
 
+	const window = BrowserWindow.getAllWindows()[0];
+
 	console.log("Starting upload of challenges...");
-	const successes = await upload();
+	const successes = await upload(window);
+
+	window.setProgressBar(-1); // Removes the progress bar
+	sound.play(path.join(resourcesPath, "finished.mp3")); // Play finished sound
+
+	if(!window.isFocused()){
+		window.flashFrame(true);
+		window.once('focus', () => window.flashFrame(false));
+	}
 
 	return { code: 200, message: `${successes}/${challengeCount} challenges were uploaded.` };
 }
@@ -382,8 +395,7 @@ const createWindow = () => {
 		return win.setFullScreen(false);
 	});
 	globalShortcut.register("CommandOrControl+Shift+I", () => {
-		const devtools = path.join(__dirname, "/static/devtools.mp3");
-		sound.play(devtools);
+		sound.play(path.join(resourcesPath, "./devtools.mp3"));
 		setTimeout(() => win.webContents.openDevTools(), 1000);
 	});
 };
