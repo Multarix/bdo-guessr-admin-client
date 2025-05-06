@@ -10,8 +10,8 @@ The program will move the selected file to the `My Documents/BDOGuessr/screensho
 I recommend getting an [[Event] Sturdy Chair](https://bdocodex.com/us/item/46956/) or another similar item so you can sit on it and go freecam at any point in time.
 
 # Settings for Screenshots
-## Display Quality<br>
-**Texture Quality:** High
+## Display Quality
+**Texture Quality:** High<br>
 **Graphics:** Remastered or Ultra<br>
 **Anti-aliasing:** TAA or FXAA (TAA is better)<br>
 **SSAO:** On<br>
