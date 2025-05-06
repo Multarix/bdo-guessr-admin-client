@@ -182,7 +182,7 @@ const map = L.map('map', {
 	crs: L.CRS.Simple,
 	minZoom: 3,
 	maxZoom: 9,
-	bounds: [[0, 0], [32760, 32760]],
+	bounds: [[0, 0], [32768, 32768]],
 	maxBoundsViscosity: 1.0,
 	attributionControl: false,
 	fullscreenControl: true
