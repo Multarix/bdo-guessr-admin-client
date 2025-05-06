@@ -52,18 +52,18 @@ initialStartupStatus("Loading script.js...");
 
 /**
  * @typedef ChallengeOverlays
- * @property {L.LayerGroup|undefined} Easy
- * @property {L.LayerGroup|undefined} Medium
- * @property {L.LayerGroup|undefined} Hard
- * @property {L.LayerGroup|undefined} Impossible
- * @property {L.LayerGroup|undefined} `Prod Easy`
- * @property {L.LayerGroup|undefined} `Prod Medium`
- * @property {L.LayerGroup|undefined} `Prod Hard`
- * @property {L.LayerGroup|undefined} `Prod Impossible`
- * @property {L.LayerGroup|undefined} `Beta Easy`
- * @property {L.LayerGroup|undefined} `Beta Medium`
- * @property {L.LayerGroup|undefined} `Beta Hard`
- * @property {L.LayerGroup|undefined} `Beta Impossible`
+ * @property {L.LayerGroup|undefined} `Easy (Local)`
+ * @property {L.LayerGroup|undefined} `Medium (Local)`
+ * @property {L.LayerGroup|undefined} `Hard (Local)`
+ * @property {L.LayerGroup|undefined} `Impossible (Local)`
+ * @property {L.LayerGroup|undefined} `Easy (Beta)`
+ * @property {L.LayerGroup|undefined} `Medium (Beta)`
+ * @property {L.LayerGroup|undefined} `Hard (Beta)`
+ * @property {L.LayerGroup|undefined} `Impossible (Beta)`
+ * @property {L.LayerGroup|undefined} `Easy (Prod)`
+ * @property {L.LayerGroup|undefined} `Medium (Prod)`
+ * @property {L.LayerGroup|undefined} `Hard (Prod)`
+ * @property {L.LayerGroup|undefined} `Impossible (Prod)`
 */
 
 /**
