@@ -24,6 +24,7 @@ body {
 }
 .leaflet-container {
 	cursor: unset !important;
+	background-color: var(--background-color) !important;
 }
 .leaflet-interactive {
 	cursor: pointer !important;
