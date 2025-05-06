@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, globalShortcut } = require("electron/main");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
+const sound = require("sound-play");
 
 const path = require('path');
 const fs = require("fs");
@@ -376,10 +377,14 @@ const createWindow = () => {
 
 	globalShortcut.register("f5", () => win.reload());
 	globalShortcut.register("CommandOrControl+R", () => win.reload());
-	globalShortcut.register("CommandOrControl+Shift+I", () => win.webContents.openDevTools());
 	globalShortcut.register("f11", () => {
 		if(!win.isFullScreen()) return win.setFullScreen(true);
 		return win.setFullScreen(false);
+	});
+	globalShortcut.register("CommandOrControl+Shift+I", () => {
+		const devtools = path.join(__dirname, "/static/devtools.mp3");
+		sound.play(devtools);
+		setTimeout(() => win.webContents.openDevTools(), 1000);
 	});
 };
 

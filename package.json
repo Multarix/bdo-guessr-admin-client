@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "sound-play": "^1.1.0"
   }
 }
