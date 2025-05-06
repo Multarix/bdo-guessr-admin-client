@@ -6,7 +6,8 @@ module.exports = {
 		asar: true,
 		name: "BDOGuessr_Admin",
 		icon: "./icon",
-		ignore: "^/data"
+		ignore: "^/data",
+		extraResource: ["./static/finished.mp3", "./static/devtools.mp3"]
 	},
 	rebuildConfig: {},
 	makers: [
