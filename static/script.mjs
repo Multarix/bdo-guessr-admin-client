@@ -167,9 +167,9 @@ const convertDifficulty = {
 const saveLocation = await window.electronAPI.getSaveLocation();
 /** @type {string} */
 
-
-const authToken = await window.electronAPI.getAuth();
-if(!authToken.auth) window.location.href = "./login.html"; // If we don't have an auth token, redirect to login page
+initialStartupStatus("Logging in...");
+const authData = await window.electronAPI.getAuth();
+if(!authData.auth) window.location.href = "./login.html"; // If we don't have an valid auth token, redirect to login page
 
 
 initialStartupStatus("Setting up leaflet...");
@@ -353,7 +353,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 			method: "POST",
 			headers: {
 				'Content-Type': 'application/json',
-				"Authorization": `basic ${authToken.auth}`
+				"Authorization": `basic ${authData.auth}`
 			},
 			body: JSON.stringify({
 				src: currentChallenge.src,
@@ -424,7 +424,7 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 			method: "POST",
 			headers: {
 				'Content-Type': 'application/json',
-				"Authorization": `basic ${authToken.auth}`
+				"Authorization": `basic ${authData.auth}`
 			},
 			body: JSON.stringify({
 				src: currentChallenge.src
@@ -519,7 +519,7 @@ logoutBtn.addEventListener("click", async (evt) => {
 	/** @type {ElectronResponse} */
 	const response = await window.electronAPI.setAuth("");
 
-	if(response.code === 200) return window.location.href = "./login.html";
+	if(response.code === 202) return window.location.href = "./login.html";
 	displayStatusMessage(response);
 });
 
@@ -639,7 +639,7 @@ tagInput.disabled = false;
 uploadFileBtn.disabled = false;
 syncToServerBtn.disabled = false;
 
-initialStartupStatus("Done! Enjoy :)", true);
+initialStartupStatus(`Logged in as <span class="loginRole ${authData.role}">${authData.username}</span>.`, true);
 
 /**
  ********************************
@@ -736,7 +736,7 @@ async function fetchAndConvertHostChallenges(url, options = {}){
 async function fetchAndConvertLocalChallenges(url){
 	const response = await fetch(url);
 	const challengeFile = await response.json();
-	if(authToken.auth) document.getElementById("syncContainer").style.display = "";
+	if(authData.auth) document.getElementById("syncContainer").style.display = "";
 
 	const obj = {};
 
@@ -953,7 +953,7 @@ async function refreshBetaChallenges(controlLayer){
 	const challenges = await fetchAndConvertHostChallenges("https://beta.bdoguessr.moe/challenges.json", {
 		method: "GET",
 		headers: {
-			"Authorization": `basic ${authToken.auth}`
+			"Authorization": `basic ${authData.auth}`
 		}
 	});
 
@@ -1071,7 +1071,7 @@ function enableInfoPanel(type){
 	infoFact.disabled = false;
 	infoTagInput.disabled = false;
 	updateChallengeBtn.disabled = false;
-	if(type === 0 || authToken.role === "admin") deleteChallengeBtn.disabled = false;
+	if(type === 0 || authData.role === "admin") deleteChallengeBtn.disabled = false;
 }
 
 function disableInfoPanel(){
@@ -1169,7 +1169,7 @@ function addOverlaysToMap(challenges, type, hadEasy, hadMedium, hadHard, hadImpo
 
 function initialStartupStatus(message, hide = false){
 	console.log(message);
-	document.getElementById("statusMessage").textContent = message;
+	document.getElementById("statusMessage").innerHTML = message;
 	if(hide){
 		setTimeout(() => {
 			statusContainer.style.top = "";
@@ -1181,7 +1181,7 @@ async function getBetaImage(imgUrl){
 	const response = await fetch(imgUrl, {
 		method: "GET",
 		headers: {
-			"Authorization": `basic ${authToken.auth}`
+			"Authorization": `basic ${authData.auth}`
 		}
 	});
 
