@@ -251,10 +251,10 @@ map.on("click", (ev) => {
 
 
 const localChallenges = await refreshLocalChallenges(true); // Get challenges from local file
-const hostChallenges = await refreshProdChallenges(true); // Get challangesfrom bdoguesser
+const prodChallenges = await refreshProdChallenges(true); // Get challanges from bdoguesser
 const betaChallenges = await refreshBetaChallenges(true); // Get challenges from beta server
 
-const allOverlays = Object.assign(localChallenges.overlay, hostChallenges.overlay, betaChallenges.overlay);
+const allOverlays = Object.assign({}, localChallenges.overlay, prodChallenges.overlay, betaChallenges.overlay);
 const controlLayerOptions = {
 	autoZIndex: true,
 	hideSingleBase: true,
@@ -262,8 +262,8 @@ const controlLayerOptions = {
 	sortFunction: layerSortFunction
 };
 
-const layerControl = L.control.layers(tiles, allOverlays, controlLayerOptions).addTo(map);
-updateCounts(localChallenges.count, hostChallenges.count, betaChallenges.count); // Update the counts on the page
+let layerControl = L.control.layers(tiles, allOverlays, controlLayerOptions).addTo(map);
+updateCounts(localChallenges.count, prodChallenges.count, betaChallenges.count); // Update the counts on the page
 
 
 initialStartupStatus("Setting up event listeners...");
@@ -409,7 +409,6 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
  *                              *
  ***************************** **/
 deleteChallengeBtn.addEventListener("click", async (evt) => {
-	if(authToken.role !== "admin") return deleteChallengeBtn.disabled = true;
 	evt.preventDefault();
 
 	if(!currentChallenge) return;
@@ -848,7 +847,7 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
 				}
 			}
 
-			enableInfoPanel();
+			enableInfoPanel(type);
 			swapToEditSection();
 
 			// This ensures everything gets swapped, and then we worry about loading the image
@@ -922,10 +921,10 @@ async function refreshProdChallenges(controlLayer){
 	};
 
 	if(!controlLayer){
-		refreshCircles(hostChallenges, overlays, "Prod");
+		refreshLayerControl(overlays, 1);
 
-		hostChallenges.count = counts;
-		return updateCounts(localChallenges.count, counts, betaChallenges.count);
+		prodChallenges.count = counts;
+		return updateCounts(localChallenges.count, prodChallenges.count, betaChallenges.count);
 	}
 
 	return {
@@ -973,10 +972,10 @@ async function refreshBetaChallenges(controlLayer){
 	};
 
 	if(!controlLayer){
-		refreshCircles(betaChallenges, overlays, "Beta");
+		refreshLayerControl(overlays, 2);
 
 		betaChallenges.count = counts;
-		return updateCounts(localChallenges.count, hostChallenges.count, counts);
+		return updateCounts(localChallenges.count, prodChallenges.count, betaChallenges.count);
 	}
 
 	return {
@@ -1020,10 +1019,10 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 
 
 	if(!controlLayer){
-		refreshCircles(localChallenges, overlays, "Local");
+		refreshLayerControl(overlays, 0);
 
 		localChallenges.count = counts;
-		return updateCounts(counts, hostChallenges.count, betaChallenges.count);
+		return updateCounts(localChallenges.count, prodChallenges.count, betaChallenges.count);
 	}
 
 	const easyGroup = overlays["Easy (Local)"].addTo(map);
@@ -1063,13 +1062,16 @@ function swapToAddSection(){
 	addSection.style.display = "block";
 }
 
-function enableInfoPanel(){
+/**
+ * @param {0|1|2} type
+ */
+function enableInfoPanel(type){
 	infoDifficulty.disabled = false;
 	infoHint.disabled = false;
 	infoFact.disabled = false;
 	infoTagInput.disabled = false;
 	updateChallengeBtn.disabled = false;
-	if(authToken.role === "admin") deleteChallengeBtn.disabled = false;
+	if(type === 0 || authToken.role === "admin") deleteChallengeBtn.disabled = false;
 }
 
 function disableInfoPanel(){
@@ -1093,29 +1095,76 @@ function disableInfoPanel(){
 	currentChallenge = null;
 }
 
-function refreshCircles(challenges, overlays, type){
-	const hasEasy = map.hasLayer(challenges?.easyGroup);
-	const hasMedium = map.hasLayer(challenges?.mediumGroup);
-	const hasHard = map.hasLayer(challenges?.hardGroup);
-	const hasImpossible = map.hasLayer(challenges?.impossibleGroup);
+function refreshLayerControl(overlay, type){
 
-	layerControl.removeLayer(challenges.easyGroup);
-	layerControl.removeLayer(challenges.mediumGroup);
-	layerControl.removeLayer(challenges.hardGroup);
-	layerControl.removeLayer(challenges.impossibleGroup);
-	map.removeLayer(challenges.easyGroup);
-	map.removeLayer(challenges.mediumGroup);
-	map.removeLayer(challenges.hardGroup);
-	map.removeLayer(challenges.impossibleGroup);
+	// Checks
+	const hadLocalEasy = map.hasLayer(localChallenges.overlay[`Easy (Local)`]);
+	const hadLocalMedium = map.hasLayer(localChallenges.overlay[`Medium (Local)`]);
+	const hadLocalHard = map.hasLayer(localChallenges.overlay[`Hard (Local)`]);
+	const hadLocalImpossible = map.hasLayer(localChallenges.overlay[`Impossible (Local)`]);
 
-	if(hasEasy) challenges.easyGroup = overlays[`Easy (${type})`].addTo(map);
-	if(hasMedium) challenges.mediumGroup = overlays[`Medium (${type})`].addTo(map);
-	if(hasHard) challenges.hardGroup = overlays[`Hard (${type})`].addTo(map);
-	if(hasImpossible) challenges.impossibleGroup = overlays[`Impossible (${type})`].addTo(map);
-	layerControl.addOverlay(challenges.easyGroup, `Easy (${type})`);
-	layerControl.addOverlay(challenges.mediumGroup, `Medium (${type})`);
-	layerControl.addOverlay(challenges.hardGroup, `Hard (${type})`);
-	layerControl.addOverlay(challenges.impossibleGroup, `Impossible (${type})`);
+	const hadBetaEasy = map.hasLayer(betaChallenges.overlay[`Easy (Beta)`]);
+	const hadBetaMedium = map.hasLayer(betaChallenges.overlay[`Medium (Beta)`]);
+	const hadBetaHard = map.hasLayer(betaChallenges.overlay[`Hard (Beta)`]);
+	const hadBetaImpossible = map.hasLayer(betaChallenges.overlay[`Impossible (Beta)`]);
+
+	const hadProdEasy = map.hasLayer(prodChallenges.overlay[`Easy (Prod)`]);
+	const hadProdMedium = map.hasLayer(prodChallenges.overlay[`Medium (Prod)`]);
+	const hadProdHard = map.hasLayer(prodChallenges.overlay[`Hard (Prod)`]);
+	const hadProdImpossible = map.hasLayer(prodChallenges.overlay[`Impossible (Prod)`]);
+
+	for(const challengeType of [localChallenges, prodChallenges, betaChallenges]){
+		layerControl.removeLayer(challengeType.easyGroup);
+		layerControl.removeLayer(challengeType.mediumGroup);
+		layerControl.removeLayer(challengeType.hardGroup);
+		layerControl.removeLayer(challengeType.impossibleGroup);
+		map.removeLayer(challengeType.easyGroup);
+		map.removeLayer(challengeType.mediumGroup);
+		map.removeLayer(challengeType.hardGroup);
+		map.removeLayer(challengeType.impossibleGroup);
+	}
+
+	// Remove the layer control
+	layerControl.remove();
+
+	// Update with the passed in args
+	if(type === 0) updateDifficultyGroups(localChallenges, "Local", overlay);
+	if(type === 1) updateDifficultyGroups(prodChallenges, "Prod", overlay);
+	if(type === 2) updateDifficultyGroups(betaChallenges, "Beta", overlay);
+
+	// Add the layers back to the map
+	addOverlaysToMap(localChallenges, "Local", hadLocalEasy, hadLocalMedium, hadLocalHard, hadLocalImpossible);
+	addOverlaysToMap(betaChallenges, "Beta", hadBetaEasy, hadBetaMedium, hadBetaHard, hadBetaImpossible);
+	addOverlaysToMap(prodChallenges, "Prod", hadProdEasy, hadProdMedium, hadProdHard, hadProdImpossible);
+
+	// Create the new layer control & add to map
+	const refreshed = Object.assign({}, localChallenges.overlay, prodChallenges.overlay, betaChallenges.overlay);
+	layerControl = L.control.layers(tiles, refreshed, controlLayerOptions).addTo(map);
+}
+
+
+function updateDifficultyGroups(group, type, overlay){
+	group.overlay = overlay;
+	group.easyGroup = overlay[`Easy (${type})`];
+	group.mediumGroup = overlay[`Medium (${type})`];
+	group.hardGroup = overlay[`Hard (${type})`];
+	group.impossibleGroup = overlay[`Impossible (${type})`];
+}
+
+
+/**
+ * @param {ChallengeOverlayData} challenges
+ * @param {"Local"|"Beta"|"Prod"} type
+ * @param {boolean} hadEasy
+ * @param {boolean} hadMedium
+ * @param {boolean} hadHard
+ * @param {boolean} hadImpossible
+ */
+function addOverlaysToMap(challenges, type, hadEasy, hadMedium, hadHard, hadImpossible){
+	if(hadEasy) challenges.overlay[`Easy (${type})`].addTo(map);
+	if(hadMedium) challenges.overlay[`Medium (${type})`].addTo(map);
+	if(hadHard) challenges.overlay[`Hard (${type})`].addTo(map);
+	if(hadImpossible) challenges.overlay[`Impossible (${type})`].addTo(map);
 }
 
 function initialStartupStatus(message, hide = false){
