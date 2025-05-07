@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog, globalShortcut } = require("electron/main");
+const { app, BrowserWindow, ipcMain, dialog, Menu, MenuItem } = require("electron/main");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const sound = require("sound-play");
 
@@ -405,20 +405,39 @@ const createWindow = () => {
 		}
 	});
 
-	win.setMenu(null); // This hides the file/edit/view/ menu bar at the top of the window
+	// win.setMenu(null); // This hides the file/edit/view/ menu bar at the top of the window
+
+	const menu = new Menu();
+	menu.append(new MenuItem({
+		accelerator: "f5",
+		click: () => win.reload()
+	}));
+
+	menu.append(new MenuItem({
+		accelerator: "CommandOrControl+R",
+		click: () => win.reload()
+	}));
+
+	menu.append(new MenuItem({
+		accelerator: "CommandOrControl+Shift+I",
+		click: () => {
+			sound.play(path.join(resourcesPath, "./devtools.mp3"));
+			setTimeout(() => win.webContents.openDevTools(), 1000);
+		}
+	}));
+
+	menu.append(new MenuItem({
+		accelerator: "CommandOrControl+F11",
+		click: () => {
+			if(!win.isFullScreen()) return win.setFullScreen(true);
+			return win.setFullScreen(false);
+		}
+	}));
+
+	Menu.setApplicationMenu(menu); // Set the menu as the application menu
+	win.setMenuBarVisibility(false); // Hide the menu bar
+
 	win.loadFile(initialPage);
-
-
-	globalShortcut.register("f5", () => win.reload());
-	globalShortcut.register("CommandOrControl+R", () => win.reload());
-	globalShortcut.register("f11", () => {
-		if(!win.isFullScreen()) return win.setFullScreen(true);
-		return win.setFullScreen(false);
-	});
-	globalShortcut.register("CommandOrControl+Shift+I", () => {
-		sound.play(path.join(resourcesPath, "./devtools.mp3"));
-		setTimeout(() => win.webContents.openDevTools(), 1000);
-	});
 };
 
 
