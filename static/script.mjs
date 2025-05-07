@@ -169,7 +169,6 @@ const saveLocation = await window.electronAPI.getSaveLocation();
 
 initialStartupStatus("Logging in...");
 const authData = await window.electronAPI.getAuth();
-const lowerUserName = authData.username.toLowerCase();
 if(!authData.auth) window.location.href = "./login.html"; // If we don't have an valid auth token, redirect to login page
 
 
@@ -181,17 +180,11 @@ initialStartupStatus("Setting up leaflet...");
  ***************************** **/
 
 // Custom icons
-const usernames = {
+const supportedIcons = {
 	"multarix": "./static/images/multarix.webp",
 	"niyah": "./static/images/niyah.webp",
 	"luci": "./static/images/luci.webp"
 };
-
-const customIcon = L.icon({
-	iconUrl: usernames[lowerUserName],
-	iconSize: [30, 60],
-	iconAnchor: [15, 60]
-});
 
 const map = L.map('map', {
 	crs: L.CRS.Simple,
@@ -199,8 +192,8 @@ const map = L.map('map', {
 	maxZoom: 9,
 	bounds: [[0, 0], [32768, 32768]],
 	maxBoundsViscosity: 1.0,
-	attributionControl: false,
-	fullscreenControl: true
+	attributionControl: false
+	// fullscreenControl: true
 });
 
 // Map Boundry Stuff
@@ -241,12 +234,11 @@ map.setView([-144.5, 139.0], 5); // Focus roughly on Heidel
 let marker;
 map.on("click", (ev) => {
 	if(!marker){
-		marker = (usernames[lowerUserName]) ? L.marker(ev.latlng, { draggable: true, icon: customIcon }) : L.marker(ev.latlng, { draggable: true });
+		marker = makeMarker(ev.latlng, authData.username);
 
 		map.addLayer(marker);
 		marker.on("move", (n) => {
 			const latlng = convertToHostFormat(n.latlng);
-
 
 			latInput.value = Math.min(Math.max(latlng.lat, -1), 0);
 			lngInput.value = Math.min(Math.max(latlng.lng, 0), 1);
@@ -1218,4 +1210,26 @@ function layerSortFunction(_a, _b, a, b){
 	if(b.includes("Impossible")) return -1; // Impossible always last
 	if(a.includes("Medium") && b.includes("Hard")) return -1; // Medium before Hard
 	if(a.includes("Hard") && b.includes("Medium")) return 1; // Hard before Medium
+}
+
+/**
+ *
+ *
+ * @param {Latlng} location
+ * @param {string} name
+ * @return {L.marker}
+ */
+function makeMarker(location, name){
+	const username = name.toLowerCase(); // Ignore case
+
+	if(supportedIcons[username]){
+		const customMarkerIcon = L.icon({
+			iconUrl: supportedIcons[username],
+			iconSize: [30, 60],
+			iconAnchor: [15, 60]
+		});
+
+		return L.marker(location, { draggable: true, icon: customMarkerIcon });
+	}
+	return L.marker(location, { draggable: true });
 }
