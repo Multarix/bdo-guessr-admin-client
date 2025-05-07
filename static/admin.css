@@ -168,6 +168,7 @@ hr {
 	padding: 8px 16px 10px 16px;
 	margin: 0;
 	width: fit-content;
+	height: 1.6em;
 
 	border-radius: 0 0 10px 10px;
 	border: var(--ui-border-style);
@@ -176,9 +177,11 @@ hr {
 }
 
 #statusMessage {
-	height: 1em;
+	height: 1.6em;
+	line-height: 1.5em;
 	text-align: center;
 	margin: 0;
+	font-weight: 900;
 }
 
 .admin-wrapper {
@@ -392,6 +395,17 @@ button:disabled {
 	border-right: var(--ui-border-style);
 }
 
+.loginRole {
+	display: inline-block;
+}
+
+.loginRole.admin {
+	color: #2ecc71;
+}
+
+.loginRole.helper {
+	color: #3498db;
+}
 
 /* Loading Icon */
 .loader {
