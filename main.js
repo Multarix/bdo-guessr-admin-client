@@ -91,7 +91,7 @@ async function setAuth(_event, auth){
 		loginFile.role = "";
 
 		const saveSuccess = await saveLoginInfo();
-		if(saveSuccess) return { code: 200, message: "Auth set successfully." };
+		if(saveSuccess) return { code: 202, message: "Auth unset successfully." };
 		return { code: 500, message: "Something went wrong with the request." };
 	}
 
@@ -103,21 +103,29 @@ async function setAuth(_event, auth){
 		}
 	});
 
-	if(response.status !== 200) return { code: 401, message: "Invalid username/ password." };
+	if(response.status !== 200){
+		await setAuth(null, "");
+		return { code: 401, message: "Invalid username/ password." };
+	}
+
 	const data = await response.json();
 
 	loginFile.auth = auth;
 	loginFile.role = data.role;
+	loginFile.username = data.username ?? "Unknown";
 
 	const saveSuccess = await saveLoginInfo();
-	if(saveSuccess) return { code: 200, message: `Auth set successfully. Logged in as a ${data.role}.` };
+	if(saveSuccess) return { code: 200, message: `Auth set successfully.` };
 	return { code: 500, message: "Something went wrong with the request." };
 }
 
-const getAuth = () => {
+const getAuth = async () => {
+	await setAuth(null, loginFile.auth); // Hacky, but I don't care.
+
 	return {
 		auth: loginFile.auth,
-		role: loginFile.role
+		role: loginFile.role,
+		username: loginFile.username
 	};
 };
 
