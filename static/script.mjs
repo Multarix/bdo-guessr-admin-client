@@ -169,6 +169,7 @@ const saveLocation = await window.electronAPI.getSaveLocation();
 
 initialStartupStatus("Logging in...");
 const authData = await window.electronAPI.getAuth();
+const lowerUserName = authData.username.toLowerCase();
 if(!authData.auth) window.location.href = "./login.html"; // If we don't have an valid auth token, redirect to login page
 
 
@@ -178,6 +179,20 @@ initialStartupStatus("Setting up leaflet...");
  *        Leaflet Setup         *
  *                              *
  ***************************** **/
+
+// Custom icons
+const usernames = {
+	"multarix": "./static/images/multarix.webp",
+	"niyah": "./static/images/niyah.webp",
+	"luci": "./static/images/luci.webp"
+};
+
+const customIcon = L.icon({
+	iconUrl: usernames[lowerUserName],
+	iconSize: [30, 60],
+	iconAnchor: [15, 60]
+});
+
 const map = L.map('map', {
 	crs: L.CRS.Simple,
 	minZoom: 3,
@@ -226,9 +241,7 @@ map.setView([-144.5, 139.0], 5); // Focus roughly on Heidel
 let marker;
 map.on("click", (ev) => {
 	if(!marker){
-		marker = L.marker(ev.latlng, {
-			draggable: true
-		});
+		marker = (usernames[lowerUserName]) ? L.marker(ev.latlng, { draggable: true, icon: customIcon }) : L.marker(ev.latlng, { draggable: true });
 
 		map.addLayer(marker);
 		marker.on("move", (n) => {

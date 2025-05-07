@@ -124,7 +124,7 @@ async function setAuth(_event, auth){
 
 		loginFile.auth = auth;
 		loginFile.role = data.role;
-		loginFile.username = data.username ?? "Unknown";
+		loginFile.username = atob(auth).split(":")[0]; // Decode the username from base64 (This feels wrong)
 
 		const saveSuccess = await saveLoginInfo();
 		if(saveSuccess) return { code: 200, message: `Auth set successfully.` };
