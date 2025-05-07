@@ -92,7 +92,7 @@ async function setAuth(_event, auth){
 
 		const saveSuccess = await saveLoginInfo();
 		if(saveSuccess) return { code: 202, message: "Auth unset successfully." };
-		return { code: 500, message: "Something went wrong with the request." };
+		return { code: 418, message: "Something went wrong with the request." }; // Teapot
 	}
 
 	// Check with the server if auth is valid, otherwise return an error to the user
@@ -103,20 +103,33 @@ async function setAuth(_event, auth){
 		}
 	});
 
-	if(response.status !== 200){
-		await setAuth(null, "");
-		return { code: 401, message: "Invalid username/ password." };
+	// Server error, could be anything
+	if(response.status >= 500){
+		return { code: response.status, message: "The server had an error with the request" };
 	}
 
-	const data = await response.json();
+	// Client error, most likely invalid username/password
+	if(response.status >= 400){
+		if(response.status === 401){
+			await setAuth(null, "");
+			return { code: 401, message: "Invalid username/password." };
+		}
 
-	loginFile.auth = auth;
-	loginFile.role = data.role;
-	loginFile.username = data.username ?? "Unknown";
+		// Cover other errors
+		return { code: response.status, message: response.statusText };
+	}
 
-	const saveSuccess = await saveLoginInfo();
-	if(saveSuccess) return { code: 200, message: `Auth set successfully.` };
-	return { code: 500, message: "Something went wrong with the request." };
+	if(response.status === 200){
+		const data = await response.json();
+
+		loginFile.auth = auth;
+		loginFile.role = data.role;
+		loginFile.username = data.username ?? "Unknown";
+
+		const saveSuccess = await saveLoginInfo();
+		if(saveSuccess) return { code: 200, message: `Auth set successfully.` };
+		return { code: 418, message: "Something went wrong with the request." }; // Teapot
+	}
 }
 
 const getAuth = async () => {
@@ -175,7 +188,7 @@ async function handleUpdateChallenge(_event, data){
 
 	const saveSuccess = await saveChallenges();
 	if(saveSuccess) return { code: 200, message: "Challenge updated successfully." };
-	return { code: 500, message: "Something went wrong with the request." };
+	return { code: 418, message: "Something went wrong with the request." }; // Teapot
 }
 
 
@@ -206,12 +219,12 @@ async function handleDeleteChallenge(_event, data){
 		await fsPromise.rename(currentPath, deletedPath);
 	} catch (e){
 		console.log(e);
-		return { code: 500, message: "Something went wrong with the request." };
+		return { code: 418, message: "Something went wrong with the request." }; // Teapot
 	}
 
 	const saveSuccess = await saveChallenges();
 	if(saveSuccess) return { code: 200, message: "Challenge deleted successfully." };
-	return { code: 500, message: "Something went wrong with the request." };
+	return { code: 418, message: "Something went wrong with the request." }; // Teapot
 }
 
 
@@ -254,12 +267,12 @@ async function handleFormSubmission(_event, form){
 		challengeFile.challenges.push(newChallenge);
 	} catch (e){
 		console.log(e);
-		return { code: 500, message: "Something went wrong with the request." };
+		return { code: 418, message: "Something went wrong with the request." }; // Teapot
 	}
 
 	const saveSuccess = await saveChallenges();
 	if(saveSuccess) return { code: 200, message: "Challenge added successfully." };
-	return { code: 500, message: "Something went wrong with the request." };
+	return { code: 418, message: "Something went wrong with the request." }; // Teapot
 }
 
 
