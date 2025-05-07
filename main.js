@@ -40,7 +40,7 @@ const saveLocation = path.join(app.getPath("documents"), "BDOGuessr/");
 if(!fs.existsSync(saveLocation)) fs.mkdirSync(saveLocation, { recursive: true });
 
 const challengesPath = path.join(saveLocation, "challenges.json");
-if(!fs.existsSync(challengesPath)) fs.writeFileSync(challengesPath, JSON.stringify({ "easy": [], "medium": [], "hard": [], "impossible": [], "auth": "" }, null, "\t"), { encoding: "utf8" });
+if(!fs.existsSync(challengesPath)) fs.writeFileSync(challengesPath, JSON.stringify({ challenges: [] }, null, "\t"), { encoding: "utf8" });
 
 /** @type {ChallengeFile} */
 const challengeFile = require(challengesPath);
