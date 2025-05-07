@@ -644,7 +644,7 @@ tagInput.disabled = false;
 uploadFileBtn.disabled = false;
 syncToServerBtn.disabled = false;
 
-initialStartupStatus(`Logged in as <span class="loginRole ${authData.role}">${authData.username}</span>.`, true);
+initialStartupStatus(`Logged in as <span class="loginRole ${authData.role}">${authData.username}</span>`, true);
 
 /**
  ********************************
