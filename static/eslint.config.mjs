@@ -66,6 +66,6 @@ export default defineConfig([
 			"@stylistic/semi-style": ["error", "last"]
 		}
 	},
-	{ files: ["**/*.{js,cjs,ts,cts}"], languageOptions: { globals: { ...globals.node }, sourceType: "commonjs" } },
+	{ files: ["**/*.{js,mjs,ts,mjs}"], languageOptions: { globals: { ...globals.browser }, sourceType: "module" } },
 	{ files: ["**/*.json"], plugins: { json }, language: "json/json", extends: ["json/recommended"] }
 ]);
