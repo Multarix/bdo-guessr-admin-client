@@ -7,6 +7,7 @@ const fs = require("fs");
 const fsPromise = require("fs/promises");
 
 const resourcesPath = (app.isPackaged) ? process.resourcesPath : path.join(__dirname, "/static/");
+let loggedIn = false;
 
 /**
  * @typedef Latlng
@@ -34,7 +35,6 @@ const resourcesPath = (app.isPackaged) ? process.resourcesPath : path.join(__dir
  * @property {string} auth
  * @property {string} role
  */
-
 
 const saveLocation = path.join(app.getPath("documents"), "BDOGuessr/");
 if(!fs.existsSync(saveLocation)) fs.mkdirSync(saveLocation, { recursive: true });
@@ -120,6 +120,7 @@ async function setAuth(_event, auth){
 	}
 
 	if(response.status === 200){
+		loggedIn = true; // Set loggedIn to true
 		const data = await response.json();
 
 		loginFile.auth = auth;
@@ -133,7 +134,7 @@ async function setAuth(_event, auth){
 }
 
 const getAuth = async () => {
-	await setAuth(null, loginFile.auth); // Hacky, but I don't care.
+	if(!loggedIn) await setAuth(null, loginFile.auth); // Hacky, but I don't care.
 
 	return {
 		auth: loginFile.auth,
@@ -141,6 +142,11 @@ const getAuth = async () => {
 		username: loginFile.username
 	};
 };
+
+function cameFromLogin(_event, bool = false){
+	loggedIn = bool;
+	return loggedIn;
+}
 
 
 
@@ -452,6 +458,7 @@ async function init(){
 		ipcMain.handle("syncToServer", syncChallengesToServer);
 		ipcMain.handle("setAuth", setAuth);
 		ipcMain.handle("getAuth", getAuth);
+		ipcMain.handle("cameFromLogin", cameFromLogin);
 
 		createWindow();
 

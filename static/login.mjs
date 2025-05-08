@@ -22,8 +22,10 @@ document.getElementById("loginForm").addEventListener("submit", async (evt) => {
 
 	const base64 = btoa(`${username}:${password}`);
 	const response = await window.electronAPI.setAuth(base64);
-
-	if(response.code === 200) return window.location.href = "./index.html";
+	if(response.code === 200){
+		await window.electronAPI.cameFromLogin(true);
+		return window.location.href = "./index.html";
+	}
 
 	// Failed to authenticate
 	displayStatusMessage(response);
