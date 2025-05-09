@@ -259,6 +259,10 @@ const localChallenges = await refreshLocalChallenges(true); // Get challenges fr
 const prodChallenges = await refreshProdChallenges(true); // Get challanges from bdoguesser
 const betaChallenges = await refreshBetaChallenges(true); // Get challenges from beta server
 
+console.log(`Loaded ${localChallenges.count.easy + localChallenges.count.medium + localChallenges.count.hard + localChallenges.count.impossible} Local challenges`);
+console.log(`Loaded ${prodChallenges.count.easy + prodChallenges.count.medium + prodChallenges.count.hard + prodChallenges.count.impossible} Production challenges`);
+console.log(`Loaded ${betaChallenges.count.easy + betaChallenges.count.medium + betaChallenges.count.hard + betaChallenges.count.impossible} Beta challenges`);
+
 const allOverlays = Object.assign({}, localChallenges.overlay, prodChallenges.overlay, betaChallenges.overlay);
 const controlLayerOptions = {
 	autoZIndex: true,
@@ -369,8 +373,9 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 			})
 		});
 
-		const data = await response.json();
-		if(data.success){ // Successfully updated the challenge
+
+		if(response.ok){ // Successfully updated the challenge
+			const data = await response.json();
 			disableInfoPanel();
 
 			displayStatusMessage({
