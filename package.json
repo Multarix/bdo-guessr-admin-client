@@ -1,6 +1,6 @@
 {
   "name": "bdoguessr",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "description": "Local admin client for BDOGuessr",
   "main": "main.js",
   "scripts": {
