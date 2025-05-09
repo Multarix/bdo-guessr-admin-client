@@ -299,6 +299,7 @@ async function upload(win){
 	if(challengeFile.challenges.length === 0) return 0;
 	const progressIncrement = 1 / fullChallengeCount;
 
+	const start = performance.now();
 	while(challengeFile.challenges.length > failures){
 		const challenge = challengeFile.challenges[failures];
 		const count = successes + failures + 1;
@@ -317,6 +318,7 @@ async function upload(win){
 			formData.set("tags", JSON.stringify(challenge.tags));
 			formData.set("screenshot", blob, fileName);
 
+			window.webContents.send("uploadDebug", `[${count}/${fullChallengeCount}] Starting upload of '${fileName.toLowerCase()}'...`);
 			const response = await fetch("https://beta.bdoguessr.moe/upload", {
 				method: "POST",
 				headers: {
@@ -324,6 +326,7 @@ async function upload(win){
 				},
 				body: formData
 			});
+			window.webContents.send("uploadDebug", `[${count}/${fullChallengeCount}] Response received: ${response.status} ${response.statusText}`);
 
 			if(response.status === 200){
 				const uploadedFolder = path.join(screenshotFolder, "uploaded/");
@@ -362,7 +365,9 @@ async function upload(win){
 			failures += 1;
 		}
 	}
-
+	const end = performance.now();
+	const time = Math.round((end - start) / 1000);
+	window.webContents.send("uploadDebug", `Upload took ${time} seconds.`);
 	return successes;
 }
 

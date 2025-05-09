@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	deleteChallenge: (data) => ipcRenderer.invoke("deleteChallenge", data),
 	syncToServer: () => ipcRenderer.invoke("syncToServer"),
 	onUpdateStatus: (callback) => ipcRenderer.on("uploadStatus", (_event, value) => callback(value)),
+	uploadDebug: (callback) => ipcRenderer.on("uploadDebug", (_event, value) => callback(value)),
 	cameFromLogin: (bool) => ipcRenderer.invoke("cameFromLogin", (bool))
 });

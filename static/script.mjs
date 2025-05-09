@@ -533,6 +533,9 @@ window.electronAPI.onUpdateStatus((response) => {
 	displayStatusMessage(response);
 });
 
+window.electronAPI.uploadDebug((response) => {
+	console.log(response);
+});
 
 /** *****************************
  *                              *
