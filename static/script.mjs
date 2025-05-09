@@ -494,17 +494,12 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	syncText.style.display = "none";
 	syncLoad.style.display = "block";
 
-
 	/** @type {ElectronResponse} */
 	const response = await window.electronAPI.syncToServer();
 	displayStatusMessage(response);
 	await refreshLocalChallenges();
-
-
 	await refreshBetaChallenges();
 	await refreshProdChallenges();
-
-
 
 	syncToServerBtn.disabled = false;
 	uploadFileBtn.disabled = false;
