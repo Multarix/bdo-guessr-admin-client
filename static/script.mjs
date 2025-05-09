@@ -441,8 +441,8 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 			})
 		});
 
-		const data = await response.json();
-		if(data.success){ // Successfully deleted the challenge
+		if(response.ok){ // Successfully deleted the challenge
+			const data = await response.json();
 			disableInfoPanel();
 
 			displayStatusMessage({
