@@ -798,9 +798,10 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
 
 	for(const item of difficultyArray){
 		const fill = (item?.tags?.length > 0) ? fillColor[difficulty] : "#FF00FF"; // Purple for no tags;
+		const borderColor = (type === 2) ? "#ffffff" : "#000000";
 
 		const circle = L.circleMarker(item.actualLocation, {
-			color: "#000000",
+			color: borderColor,
 			fillColor: fill,
 			fillOpacity: (type > 0) ? 0.5 : 1,
 			radius: 8,
