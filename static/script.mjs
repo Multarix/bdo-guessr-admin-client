@@ -22,7 +22,8 @@ initialStartupStatus("Loading script.js...");
  * @property {string} fact
  * @property {string} src
  * @property {Latlng} actualLocation
- * @property {string|undefined} difficulty
+ * @property {string} [difficulty]
+ * @property {boolean} [uploaded]
 */
 
 /**
@@ -1012,11 +1013,16 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 	if(controlLayer) initialStartupStatus("Loading local challenges...");
 	const challenges = await fetchAndConvertLocalChallenges(saveLocation + "/challenges.json");
 
+	const localEasy = challenges.easy.filter(x => !x.uploaded);
+	const localMedi = challenges.medium.filter(x => !x.uploaded);
+	const localHard = challenges.hard.filter(x => !x.uploaded);
+	const localImpo = challenges.impossible.filter(x => !x.uploaded);
+
 	const overlays = {
-		"Easy (Local)": L.layerGroup(await makeCircles(challenges.easy, "easy")),
-		"Medium (Local)": L.layerGroup(await makeCircles(challenges.medium, "medium")),
-		"Hard (Local)": L.layerGroup(await makeCircles(challenges.hard, "hard")),
-		"Impossible (Local)": L.layerGroup(await makeCircles(challenges.impossible, "impossible"))
+		"Easy (Local)": L.layerGroup(await makeCircles(localEasy, "easy")),
+		"Medium (Local)": L.layerGroup(await makeCircles(localMedi, "medium")),
+		"Hard (Local)": L.layerGroup(await makeCircles(localHard, "hard")),
+		"Impossible (Local)": L.layerGroup(await makeCircles(localImpo, "impossible"))
 	};
 
 	const counts = {

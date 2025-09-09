@@ -23,6 +23,7 @@ let loggedIn = false;
  * @property {string} src
  * @property {Latlng} actualLocation
  * @property {string|undefined} difficulty
+ * @property {boolean} [uploaded]
 */
 
 /**
@@ -266,7 +267,8 @@ async function handleFormSubmission(_event, form){
 			actualLocation: {
 				lat: form.lat,
 				lng: form.lng
-			}
+			},
+			uploaded: false
 		};
 
 		// Add new entry
@@ -297,6 +299,10 @@ async function upload(win){
 	const fullChallengeCount = challengeFile.challenges.length;
 
 	if(challengeFile.challenges.length === 0) return 0;
+
+	const nonUploaded = challengeFile.challenges.filter(x => !x.uploaded);
+	if(nonUploaded.length === 0) return 0;
+
 	const progressIncrement = 1 / fullChallengeCount;
 
 	const start = performance.now();
@@ -334,7 +340,7 @@ async function upload(win){
 
 				// Remove challenge from json
 				const index = challengeFile.challenges.findIndex((item) => item.src === challenge.src);
-				if(index !== -1) challengeFile.challenges.splice(index, 1);
+				if(index !== -1) challengeFile.challenges[index].uploaded = true;
 
 				// Move the file to "uploaded" folder
 				if(!fs.existsSync(uploadedFolder)) fs.mkdirSync(uploadedFolder);
