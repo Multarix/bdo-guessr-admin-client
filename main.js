@@ -97,7 +97,7 @@ async function setAuth(_event, auth){
 	}
 
 	// Check with the server if auth is valid, otherwise return an error to the user
-	const response = await fetch("https://beta.bdoguessr.moe/auth", {
+	const response = await fetch("https://bdoguessr.moe/auth", {
 		method: "POST",
 		headers: {
 			"Authorization": `Basic ${auth}`
@@ -325,7 +325,7 @@ async function upload(win){
 			formData.set("screenshot", blob, fileName);
 
 			window.webContents.send("uploadDebug", `[${count}/${fullChallengeCount}] Starting upload of '${fileName.toLowerCase()}'...`);
-			const response = await fetch("https://beta.bdoguessr.moe/upload", {
+			const response = await fetch("https://bdoguessr.moe/upload", {
 				method: "POST",
 				headers: {
 					"Authorization": `Basic ${loginFile.auth}`
