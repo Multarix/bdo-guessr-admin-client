@@ -57,10 +57,6 @@ initialStartupStatus("Loading script.js...");
  * @property {L.LayerGroup|undefined} `Medium (Local)`
  * @property {L.LayerGroup|undefined} `Hard (Local)`
  * @property {L.LayerGroup|undefined} `Impossible (Local)`
- * @property {L.LayerGroup|undefined} `Easy (Beta)`
- * @property {L.LayerGroup|undefined} `Medium (Beta)`
- * @property {L.LayerGroup|undefined} `Hard (Beta)`
- * @property {L.LayerGroup|undefined} `Impossible (Beta)`
  * @property {L.LayerGroup|undefined} `Easy (Prod)`
  * @property {L.LayerGroup|undefined} `Medium (Prod)`
  * @property {L.LayerGroup|undefined} `Hard (Prod)`
@@ -117,7 +113,6 @@ const infoTagInput = document.getElementById("infoTagInput");
 /** @type {HTMLInputElement} */
 const infoIsHost = document.getElementById("isHost");
 /** @type {HTMLInputElement} */
-const infoIsBeta = document.getElementById("isBeta");
 
 /** @type {HTMLButtonElement} */
 const updateChallengeBtn = document.getElementById("updateChallengeBtn");
@@ -258,13 +253,11 @@ map.on("click", (ev) => {
 
 const localChallenges = await refreshLocalChallenges(true); // Get challenges from local file
 const prodChallenges = await refreshProdChallenges(true); // Get challanges from bdoguesser
-const betaChallenges = await refreshBetaChallenges(true); // Get challenges from beta server
 
 console.log(`Loaded ${localChallenges.count.easy + localChallenges.count.medium + localChallenges.count.hard + localChallenges.count.impossible} Local challenges`);
 console.log(`Loaded ${prodChallenges.count.easy + prodChallenges.count.medium + prodChallenges.count.hard + prodChallenges.count.impossible} Production challenges`);
-console.log(`Loaded ${betaChallenges.count.easy + betaChallenges.count.medium + betaChallenges.count.hard + betaChallenges.count.impossible} Beta challenges`);
 
-const allOverlays = Object.assign({}, localChallenges.overlay, prodChallenges.overlay, betaChallenges.overlay);
+const allOverlays = Object.assign({}, localChallenges.overlay, prodChallenges.overlay);
 const controlLayerOptions = {
 	autoZIndex: true,
 	hideSingleBase: true,
@@ -273,7 +266,7 @@ const controlLayerOptions = {
 };
 
 let layerControl = L.control.layers(tiles, allOverlays, controlLayerOptions).addTo(map);
-updateCounts(localChallenges.count, prodChallenges.count, betaChallenges.count); // Update the counts on the page
+updateCounts(localChallenges.count, prodChallenges.count); // Update the counts on the page
 
 
 initialStartupStatus("Setting up event listeners...");
@@ -357,7 +350,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 
 	// Host Update
 	if(infoIsHost.checked){
-		const url = (infoIsBeta.checked) ? "https://beta.bdoguessr.moe/update_difficulty" : "https://bdoguessr.moe/update_difficulty";
+		const url = "https://bdoguessr.moe/update_difficulty";
 
 		const response = await fetch(url, {
 			method: "POST",
@@ -384,7 +377,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 				message: "Successfully updated the challenge on the server."
 			});
 
-			return (infoIsBeta.checked) ? refreshBetaChallenges() : refreshProdChallenges();
+			return refreshProdChallenges();
 		}
 
 		// Failed to update the challenge
@@ -430,7 +423,7 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 
 	// Host delete
 	if(infoIsHost.checked){
-		const url = (infoIsBeta.checked) ? "https://beta.bdoguessr.moe/delete_challenge" : "https://bdoguessr.moe/delete_challenge";
+		const url = "https://bdoguessr.moe/delete_challenge";
 		const response = await fetch(url, {
 			method: "POST",
 			headers: {
@@ -451,7 +444,7 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 				message: "Successfully deleted the challenge from the server."
 			});
 
-			return (infoIsBeta.checked) ? refreshBetaChallenges() : refreshProdChallenges();
+			return refreshProdChallenges();
 		}
 
 		// Failed to update the challenge
@@ -499,7 +492,6 @@ syncToServerBtn.addEventListener("click", async (evt) => {
 	const response = await window.electronAPI.syncToServer();
 	displayStatusMessage(response);
 	await refreshLocalChallenges();
-	await refreshBetaChallenges();
 	await refreshProdChallenges();
 
 	syncToServerBtn.disabled = false;
@@ -661,8 +653,10 @@ initialStartupStatus(`Logged in as <span class="loginRole ${authData.role}">${au
  * @returns {Latlng}
  */
 function convertToHostFormat(obj){
-	const realLat = (obj.lat * 128) / 32768;
-	const realLng = (obj.lng * 128) / 32768;
+	const realLat = obj.lat;
+	// const realLat = (obj.lat * 128) / 32768;
+	const realLng = obj.lng;
+	// const realLng = (obj.lng * 128) / 32768;
 
 	return { lat: realLat, lng: realLng };
 }
@@ -679,8 +673,10 @@ function convertToHostFormat(obj){
  * @returns {Latlng}
  */
 function convertToLocalFormat(obj){
-	const updatedLat = (obj.lat * 32768) / 128;
-	const updatedLng = (obj.lng * 32768) / 128;
+	// const updatedLat = ((obj.lat * 32768 - 64) / 128);
+	const updatedLat = obj.lat;
+	// const updatedLng = ((obj.lng * 32768 + 64) / 128);
+	const updatedLng = obj.lng;
 
 	return { lat: updatedLat, lng: updatedLng };
 }
@@ -779,14 +775,13 @@ async function fetchAndConvertLocalChallenges(url){
  * @name makeCircles
  * @param {ChallengeData[]} difficultyArray
  * @param {"easy"|"medium"|"hard"|"impossible"} difficulty
- * @param {0|1|2} type 0: Local, 1: Prod, 2: Beta
+ * @param {0|1|2} type 0: Local, 1: Prod
  * @returns {Promise<L.CircleMarker[]>}
  */
 async function makeCircles(difficultyArray, difficulty, type = 0){
 	// type:
 	// 0 = Local
 	// 1 = Prod
-	// 2 = Beta
 
 	const fillColor = {
 		easy: "#00c000",
@@ -834,7 +829,6 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
 			infoHint.value = item.hint ?? "";
 			infoFact.value = item.fact ?? "";
 			infoIsHost.checked = (type > 0);
-			infoIsBeta.checked = (type === 2);
 
 			infoTagContainer.replaceChildren(); // Clear the tag container
 			infoTagInput.value = ""; // Clear the tag input
@@ -859,13 +853,6 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
 
 			enableInfoPanel(type);
 			swapToEditSection();
-
-			// This ensures everything gets swapped, and then we worry about loading the image
-			if(type === 2){
-				const imgUrl = `https://beta.bdoguessr.moe/${item.src}`;
-				const img = await getBetaImage(imgUrl);
-				circle.getPopup().setContent(`<img class="imgPreview" src="${img}">`);
-			}
 		});
 
 		circle.on("popupclose", () => {
@@ -890,11 +877,11 @@ async function makeCircles(difficultyArray, difficulty, type = 0){
  * @param {boolean} controlLayer
  * @returns {void}
  */
-function updateCounts(localCount, hostCount, betaCount){
-	document.getElementById("easyCount").textContent = localCount.easy + hostCount.easy + betaCount.easy;
-	document.getElementById("mediumCount").textContent = localCount.medium + hostCount.medium + betaCount.medium;
-	document.getElementById("hardCount").textContent = localCount.hard + hostCount.hard + betaCount.hard;
-	document.getElementById("impossibleCount").textContent = localCount.impossible + hostCount.impossible + betaCount.impossible;
+function updateCounts(localCount = { easy: 0, medium: 0, hard: 0, impossible: 0 }, hostCount = { easy: 0, medium: 0, hard: 0, impossible: 0 }){
+	document.getElementById("easyCount").textContent = localCount.easy + hostCount.easy;
+	document.getElementById("mediumCount").textContent = localCount.medium + hostCount.medium;
+	document.getElementById("hardCount").textContent = localCount.hard + hostCount.hard;
+	document.getElementById("impossibleCount").textContent = localCount.impossible + hostCount.impossible;
 	document.getElementById("easyCountLocal").textContent = localCount.easy;
 	document.getElementById("mediumCountLocal").textContent = localCount.medium;
 	document.getElementById("hardCountLocal").textContent = localCount.hard;
@@ -934,7 +921,7 @@ async function refreshProdChallenges(controlLayer){
 		refreshLayerControl(overlays, 1);
 
 		prodChallenges.count = counts;
-		return updateCounts(localChallenges.count, prodChallenges.count, betaChallenges.count);
+		return updateCounts(localChallenges.count, prodChallenges.count);
 	}
 
 	return {
@@ -944,57 +931,6 @@ async function refreshProdChallenges(controlLayer){
 		mediumGroup: overlays["Medium (Prod)"],
 		hardGroup: overlays["Hard (Prod)"],
 		impossibleGroup: overlays["Impossible (Prod)"]
-	};
-}
-
-
-/**
- ********************************
- *                              *
- *       Beta Challenges        *
- *                              *
- ********************************
- * @name refreshBetaChallenges
- * @param {boolean} controlLayer
- * @returns {Promise<ChallengeOverlayData>}
- */
-async function refreshBetaChallenges(controlLayer){
-	if(controlLayer) initialStartupStatus("Loading beta challenges...");
-	const challenges = await fetchAndConvertHostChallenges("https://beta.bdoguessr.moe/challenges.json", {
-		method: "GET",
-		headers: {
-			"Authorization": `basic ${authData.auth}`
-		}
-	});
-
-	const overlays = {
-		"Easy (Beta)": L.layerGroup(await makeCircles(challenges.easy, "easy", 2)),
-		"Medium (Beta)": L.layerGroup(await makeCircles(challenges.medium, "medium", 2)),
-		"Hard (Beta)": L.layerGroup(await makeCircles(challenges.hard, "hard", 2)),
-		"Impossible (Beta)": L.layerGroup(await makeCircles(challenges.impossible, "impossible", 2))
-	};
-
-	const counts = {
-		easy: challenges.easy.length,
-		medium: challenges.medium.length,
-		hard: challenges.hard.length,
-		impossible: challenges.impossible.length
-	};
-
-	if(!controlLayer){
-		refreshLayerControl(overlays, 2);
-
-		betaChallenges.count = counts;
-		return updateCounts(localChallenges.count, prodChallenges.count, betaChallenges.count);
-	}
-
-	return {
-		overlay: overlays,
-		count: counts,
-		easyGroup: overlays["Easy (Beta)"],
-		mediumGroup: overlays["Medium (Beta)"],
-		hardGroup: overlays["Hard (Beta)"],
-		impossibleGroup: overlays["Impossible (Beta)"]
 	};
 }
 
@@ -1037,7 +973,7 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 		refreshLayerControl(overlays, 0);
 
 		localChallenges.count = counts;
-		return updateCounts(localChallenges.count, prodChallenges.count, betaChallenges.count);
+		return updateCounts(localChallenges.count, prodChallenges.count);
 	}
 
 	const easyGroup = overlays["Easy (Local)"].addTo(map);
@@ -1118,17 +1054,12 @@ function refreshLayerControl(overlay, type){
 	const hadLocalHard = map.hasLayer(localChallenges.overlay[`Hard (Local)`]);
 	const hadLocalImpossible = map.hasLayer(localChallenges.overlay[`Impossible (Local)`]);
 
-	const hadBetaEasy = map.hasLayer(betaChallenges.overlay[`Easy (Beta)`]);
-	const hadBetaMedium = map.hasLayer(betaChallenges.overlay[`Medium (Beta)`]);
-	const hadBetaHard = map.hasLayer(betaChallenges.overlay[`Hard (Beta)`]);
-	const hadBetaImpossible = map.hasLayer(betaChallenges.overlay[`Impossible (Beta)`]);
-
 	const hadProdEasy = map.hasLayer(prodChallenges.overlay[`Easy (Prod)`]);
 	const hadProdMedium = map.hasLayer(prodChallenges.overlay[`Medium (Prod)`]);
 	const hadProdHard = map.hasLayer(prodChallenges.overlay[`Hard (Prod)`]);
 	const hadProdImpossible = map.hasLayer(prodChallenges.overlay[`Impossible (Prod)`]);
 
-	for(const challengeType of [localChallenges, prodChallenges, betaChallenges]){
+	for(const challengeType of [localChallenges, prodChallenges]){
 		layerControl.removeLayer(challengeType.easyGroup);
 		layerControl.removeLayer(challengeType.mediumGroup);
 		layerControl.removeLayer(challengeType.hardGroup);
@@ -1145,15 +1076,13 @@ function refreshLayerControl(overlay, type){
 	// Update with the passed in args
 	if(type === 0) updateDifficultyGroups(localChallenges, "Local", overlay);
 	if(type === 1) updateDifficultyGroups(prodChallenges, "Prod", overlay);
-	if(type === 2) updateDifficultyGroups(betaChallenges, "Beta", overlay);
 
 	// Add the layers back to the map
 	addOverlaysToMap(localChallenges, "Local", hadLocalEasy, hadLocalMedium, hadLocalHard, hadLocalImpossible);
-	addOverlaysToMap(betaChallenges, "Beta", hadBetaEasy, hadBetaMedium, hadBetaHard, hadBetaImpossible);
 	addOverlaysToMap(prodChallenges, "Prod", hadProdEasy, hadProdMedium, hadProdHard, hadProdImpossible);
 
 	// Create the new layer control & add to map
-	const refreshed = Object.assign({}, localChallenges.overlay, prodChallenges.overlay, betaChallenges.overlay);
+	const refreshed = Object.assign({}, localChallenges.overlay, prodChallenges.overlay);
 	layerControl = L.control.layers(tiles, refreshed, controlLayerOptions).addTo(map);
 }
 
@@ -1169,7 +1098,7 @@ function updateDifficultyGroups(group, type, overlay){
 
 /**
  * @param {ChallengeOverlayData} challenges
- * @param {"Local"|"Beta"|"Prod"} type
+ * @param {"Local"|"Prod"} type
  * @param {boolean} hadEasy
  * @param {boolean} hadMedium
  * @param {boolean} hadHard
@@ -1192,20 +1121,9 @@ function initialStartupStatus(message, hide = false){
 	}
 }
 
-async function getBetaImage(imgUrl){
-	const response = await fetch(imgUrl, {
-		method: "GET",
-		headers: {
-			"Authorization": `basic ${authData.auth}`
-		}
-	});
-
-	const blob = await response.blob();
-	return URL.createObjectURL(blob);
-}
 
 function layerSortFunction(_a, _b, a, b){
-	// Local before Prod before Beta
+	// Local before Prod
 	if(a.charAt(0) === b.charAt(0)){ // They are both the same difficulty
 		if(a.includes("Local")) return -1; // Local always first
 		if(b.includes("Local")) return 1; // Local always first
