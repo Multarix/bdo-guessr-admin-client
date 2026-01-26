@@ -236,8 +236,8 @@ map.on("click", (ev) => {
 		marker.on("move", (n) => {
 			const latlng = convertToHostFormat(n.latlng);
 
-			latInput.value = Math.min(Math.max(latlng.lat, -1), 0);
-			lngInput.value = Math.min(Math.max(latlng.lng, 0), 1);
+			latInput.value = Math.min(Math.max(latlng.lat, -256), 0);
+			lngInput.value = Math.min(Math.max(latlng.lng, 0), 256);
 
 			// Close the popup if we move the marker
 			if(activePopup){
