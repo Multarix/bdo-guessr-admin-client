@@ -2,7 +2,13 @@
 <html>
 
 <head>
-	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://bdoguessr.moe/ data: blob: image/gif; style-src 'self' 'unsafe-inline'; connect-src 'self' https://bdoguessr.moe/">
+	<meta http-equiv="Content-Security-Policy" content="
+		default-src 'self';
+		img-src 'self' https://bdoguessr.moe/ data: blob: image/gif;
+		style-src 'self' https://cdn.jsdelivr.net/ 'unsafe-inline';
+		connect-src 'self' https://bdoguessr.moe/;
+		script-src 'self' https://cdn.jsdelivr.net/ 'nonce-panorama'
+		">
 	<title>BDO Guessr</title>
 	<link rel="icon" type="image/x-icon" href="./icon.ico">
 	<link rel="stylesheet" href="./static/admin.css">
@@ -11,6 +17,15 @@
 	<script src="./static/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="></script>
 	<script src='./static/Leaflet.fullscreen.min.js'></script>
 	<link href='./static/leaflet.fullscreen.css' rel='stylesheet' />
+	
+	<script nonce="panorama" type="importmap">
+		{
+			"imports": {
+				"three": "https://cdn.jsdelivr.net/npm/three/build/three.module.js",
+				"@photo-sphere-viewer/core": "https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5/index.module.js"
+			}
+		}
+	</script>
 	
 	<script defer src="./static/script.mjs" type="module"></script>
 </head>

@@ -1,3 +1,5 @@
+@import 'https://cdn.jsdelivr.net/npm/@photo-sphere-viewer/core@5/index.css';
+
 /* Generics */
 :root {
 	--background-color: #2b2b2b;
@@ -44,6 +46,10 @@ a.leaflet-popup-close-button {
 	right: 3px !important;
 }
 
+#panorama {
+	width: 600px;
+	height: 350px;
+}
 
 label {
 	display: block;

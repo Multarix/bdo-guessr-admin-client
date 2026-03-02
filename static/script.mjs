@@ -3,6 +3,9 @@
 
 initialStartupStatus("Loading script.js...");
 
+import { Viewer } from '@photo-sphere-viewer/core';
+
+
 /**
  * @typedef Latlng
  * @property {string} lat
@@ -222,7 +225,7 @@ const betaTiles = L.tileLayer('./tiles/{z}/{x}/{y}.webp', {
 	bounds: imageBounds
 }).addTo(map);
 
-
+const delay = ms => new Promise(res => setTimeout(res, ms));
 
 const tiles = {
 	"Local Tiles": betaTiles,
@@ -829,15 +832,40 @@ async function makeCircles(difficultyArray){
 
 		const popup = L.popup(popupOptions);
 
-		if(!type) popup.setContent(`<img class="imgPreview" src="${saveLocation}/screenshots/${item.src}">`, popupOptions);
-		if(type) popup.setContent(`<img class="imgPreview" src="https://bdoguessr.moe/${item.src}`, popupOptions);
-
+		if(item.tags.includes("panorama")){
+			popup.setContent(`<div class="imgPreview" id="panorama">`, popupOptions);
+		} else {
+			if(!type) popup.setContent(`<img class="imgPreview" src="${saveLocation}/screenshots/${item.src}">`, popupOptions);
+			if(type) popup.setContent(`<img class="imgPreview" src="https://bdoguessr.moe/${item.src}">`, popupOptions);
+		}
 
 		circle.bindPopup(popup);
 
+		/** @type {Viewer} */
+		let panorama;
+
 		circle.on("click", async (evt) => {
 			L.DomEvent.stopPropagation(evt);
-			circle.openPopup();
+			// if(panorama) panorama.destroy();
+			// if(activePopup) activePopup.closePopup();
+			await circle.openPopup();
+
+			if(item.tags.includes("panorama")){
+				await delay(500);
+
+				const image = (!type) ? `${saveLocation}/screenshots/${item.src}` : `https://bdoguessr.moe/${item.src}`;
+
+				panorama = new Viewer({
+					container: 'panorama',
+					panorama: image
+				});
+
+				panorama.addEventListener("ready", () => {
+					console.log("Loaded Panorama!");
+				}, { once: true });
+
+				// document.getElementById("panorama").setAttribute("id", "");
+			}
 
 			activePopup = circle;
 			currentChallenge = item;
