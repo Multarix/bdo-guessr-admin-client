@@ -22,8 +22,8 @@ let loggedIn = false;
  * @property {string} fact
  * @property {string} src
  * @property {Latlng} actualLocation
- * @property {string|undefined} difficulty
- * @property {boolean} [uploaded]
+ * @property {string} difficulty
+ * @property {boolean} uploaded
 */
 
 /**
@@ -243,7 +243,7 @@ async function handleDeleteChallenge(_event, data){
 /* **************************** */
 async function handleFormSubmission(_event, form){
 	// Make sure the data is set correctly
-	if(!["1", "2", "3", "4"].includes(form.difficulty)) return { code: 400, message: "Difficulty should be 1, 2, 3 or 4" };
+	if(![0, 1, 2, 3].includes(form.difficulty)) return { code: 400, message: `Difficulty should be 0, 1, 2 or 3. Was ${form.difficulty}.` };
 	if(form.src === "") return { code: 400, response: "Screenshot should not be empty." };
 
 
@@ -296,29 +296,33 @@ async function upload(win){
 
 	let successes = 0;
 	let failures = 0;
-	const fullChallengeCount = challengeFile.challenges.length;
 
 	if(challengeFile.challenges.length === 0) return 0;
 
 	const nonUploaded = challengeFile.challenges.filter(x => !x.uploaded);
+	const fullChallengeCount = nonUploaded.length;
+
 	if(nonUploaded.length === 0) return 0;
 
 	const progressIncrement = 1 / fullChallengeCount;
 
 	const start = performance.now();
-	while(challengeFile.challenges.length > failures){
-		const challenge = challengeFile.challenges[failures];
-		const count = successes + failures + 1;
+
+	let count = 0;
+	for(const challenge of nonUploaded){
+		count += 1;
+		if(challenge.uploaded) continue;
+
 		window.setProgressBar(count * progressIncrement); // Set the progress bar
 		try {
 			const screenshotLocation = path.join(screenshotFolder, challenge.src);
-			const blob = new Blob([await fsPromise.readFile(screenshotLocation)]);
-			const fileName = challenge.src.split("/").pop();
+			const blob = new Blob([await fsPromise.readFile(screenshotLocation)]); // Throwing an error
+			const fileName = challenge.src;
 
 			const formData = new FormData();
 			formData.set("lat", challenge.actualLocation.lat);
 			formData.set("lng", challenge.actualLocation.lng);
-			formData.set("difficulty", challenge.difficulty);
+			formData.set("difficulty", String(1 + challenge.difficulty));
 			formData.set("fact", challenge.fact);
 			formData.set("hint", challenge.hint);
 			formData.set("tags", JSON.stringify(challenge.tags));
@@ -338,8 +342,8 @@ async function upload(win){
 				const uploadedFolder = path.join(screenshotFolder, "uploaded/");
 				const uploadedPath = path.join(uploadedFolder, fileName);
 
-				// Remove challenge from json
-				const index = challengeFile.challenges.findIndex((item) => item.src === challenge.src);
+				// Set challenge in json to be uploaded
+				const index = challengeFile.challenges.findLastIndex((item) => item.src === challenge.src);
 				if(index !== -1) challengeFile.challenges[index].uploaded = true;
 
 				// Move the file to "uploaded" folder
@@ -371,6 +375,7 @@ async function upload(win){
 			failures += 1;
 		}
 	}
+
 	const end = performance.now();
 	const time = Math.round((end - start) / 1000);
 	window.webContents.send("uploadDebug", `Upload took ${time} seconds.`);
@@ -385,7 +390,7 @@ async function upload(win){
 /*                              */
 /* **************************** */
 async function syncChallengesToServer(){
-	const challengeCount = challengeFile.challenges.length;
+	const challengeCount = challengeFile.challenges.filter(x => !x.uploaded).length();
 	if(challengeCount === 0) return { code: 400, message: "No challenges were available to upload." };
 
 	const window = BrowserWindow.getAllWindows()[0];
