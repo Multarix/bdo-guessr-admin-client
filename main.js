@@ -390,7 +390,7 @@ async function upload(win){
 /*                              */
 /* **************************** */
 async function syncChallengesToServer(){
-	const challengeCount = challengeFile.challenges.filter(x => !x.uploaded).length();
+	const challengeCount = challengeFile.challenges.filter(x => !x.uploaded).length;
 	if(challengeCount === 0) return { code: 400, message: "No challenges were available to upload." };
 
 	const window = BrowserWindow.getAllWindows()[0];
