@@ -343,7 +343,7 @@ async function upload(win){
 				const uploadedPath = path.join(uploadedFolder, fileName);
 
 				// Set challenge in json to be uploaded
-				const index = challengeFile.challenges.findLastIndex((item) => item.src === challenge.src);
+				const index = challengeFile.challenges.findLastIndex((item) => item.src === challenge.src && !item.uploaded);
 				if(index !== -1) challengeFile.challenges[index].uploaded = true;
 
 				// Move the file to "uploaded" folder
