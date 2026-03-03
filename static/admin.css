@@ -425,6 +425,30 @@ button:disabled {
 	animation: spin 2s linear infinite;
 }
 
+.cluster {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    color: white;
+    font-weight: bold;
+	opacity: 0.75;
+}
+
+.prod {
+	border: 2px solid #000000;
+}
+
+.local {
+	border: 2px solid #ffffff;
+}
+
+.cluster-green { background: #00c000; }
+.cluster-orange { background: #ff8000; }
+.cluster-red { background: #ff0000; }
+.cluster-black { background: #000000; }
+
 @keyframes spin {
 	0% {
 		transform: rotate(0deg);
