@@ -154,16 +154,7 @@ let updateTags = [];
 /** @type {string[]} */
 let submitTags = [];
 
-const convertDifficulty = {
-	"easy": 		"1",
-	"medium":		"2",
-	"hard":			"3",
-	"impossible":	"4",
-	"1":			"easy",
-	"2":			"medium",
-	"3":			"hard",
-	"4":			"impossible"
-};
+let latestChallenges;
 
 /** @type {string} */
 const saveLocation = await window.electronAPI.getSaveLocation();
@@ -388,7 +379,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 				message: "Successfully updated the challenge on the server."
 			});
 
-			return refreshProdChallenges();
+			return await refreshProdChallenges();
 		}
 
 		// Failed to update the challenge
@@ -455,7 +446,7 @@ deleteChallengeBtn.addEventListener("click", async (evt) => {
 				message: "Successfully deleted the challenge from the server."
 			});
 
-			return refreshProdChallenges();
+			return await refreshProdChallenges();
 		}
 
 		// Failed to update the challenge
@@ -746,6 +737,7 @@ async function fetchAndConvertHostChallenges(url, options = {}){
 		}
 	}
 
+	latestChallenges = challenges;
 	return challenges;
 }
 
@@ -996,8 +988,8 @@ async function refreshProdChallenges(controlLayer){
 	};
 
 	if(!controlLayer){
-		refreshLayerControl(overlays, 1);
-		refreshTags();
+		await refreshLayerControl(overlays, 1);
+		await refreshTags();
 
 		prodChallenges.count = counts;
 		return updateCounts(localChallenges.count, prodChallenges.count);
@@ -1044,8 +1036,8 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 
 
 	if(!controlLayer){
-		refreshLayerControl(overlays, 0);
-		refreshTags();
+		await refreshLayerControl(overlays, 0);
+		await refreshTags();
 
 		localChallenges.count = counts;
 		return updateCounts(localChallenges.count, prodChallenges.count);
@@ -1122,7 +1114,7 @@ function disableInfoPanel(){
 }
 
 
-function refreshLayerControl(overlay, type){
+async function refreshLayerControl(overlay, type){
 	// Checks
 	const hadLocalEasy = map.hasLayer(localChallenges.overlay[`Easy (Local)`]);
 	const hadLocalMedium = map.hasLayer(localChallenges.overlay[`Medium (Local)`]);
@@ -1237,12 +1229,19 @@ function makeMarker(location, name){
 }
 
 
+/** *****************************
+ *                              *
+ *         Tag Functions        *
+ *                              *
+ ***************************** **/
+
+
 /**
  * @returns {ChallengeData[]}
 */
 async function getAllChallenges(){
 	const localChallenges = await fetchAndConvertLocalChallenges(saveLocation + "/challenges.json");
-	const prodChallenges = await fetchAndConvertHostChallenges("https://bdoguessr.moe/challenges.json");
+	const prodChallenges = latestChallenges;
 
 	const allChallenges = [];
 	for(const [key, value] of Object.entries(localChallenges)){
@@ -1255,14 +1254,19 @@ async function getAllChallenges(){
 }
 
 
+function toProperCase(string){
+	return string.charAt(0).toUpperCase() + string.slice(1);
+}
+
+
 /**
  *
- * @returns {Map<string,ChallengeData>}
+ * @returns {Map<string,ChallengeData[]>}
  */
 async function getAllTags(){
 	const allChallenges = await getAllChallenges();
 
-	/** @type {Map<string,ChallengeData>} */
+	/** @type {Map<string,ChallengeData[]>} */
 	const allTags = new Map();
 
 	const invalidTags = [
@@ -1298,39 +1302,55 @@ async function refreshTags(controlLayer){
 	const tagMap = await getAllTags();
 	const tags = Array.from(tagMap.keys());
 
+	/** @type {Object.<string, L.layerGroup>} */
 	const overlays = {};
 	const wasActive = [];
+	const oldTags = [];
 
 	for(const tag of tags){
-		overlays[tag] = L.layerGroup(await makeCircles(tagMap.get(tag)));
+		const tagMapChallenges = tagMap.get(tag);
+		const totalInTag = tagMapChallenges.length;
+		const overlayName = `${toProperCase(tag)} [${totalInTag}]`;
+
+		oldTags.push(overlayName);
+
+		overlays[overlayName] = L.layerGroup(await makeCircles(tagMapChallenges));
 	}
 
 
 	if(!controlLayer){ // Refresh Layer Control
 		// Remove layers
 		for(const tag of tagChallenges.oldTags){
-			if(map.hasLayer(tagChallenges.overlay[tag])) wasActive.push(tag);
-
+			if(map.hasLayer(tagChallenges.overlay[tag])) wasActive.push(tag.split(" ")[0]);
 
 			tagLayerControl.removeLayer(tagChallenges.overlay[tag]);
 			map.removeLayer(tagChallenges.overlay[tag]);
 		}
 
-		// Remove Control & Re-Add
+		// Remove Control
 		tagLayerControl.remove();
-		tagLayerControl = L.control.layers(null, overlays, { autoZIndex: true, hideSingleBase: true, sortLayers: true }).addTo(map);
 
 
-		// Re-Add Turned on Overlays
+		// Turned back on Overlays
 		for(const activeTag of wasActive){
-			if(overlays[activeTag]) overlays[activeTag].addTo(map);
+			const keys = Object.keys(overlays);
+			for(const key of keys){
+				if(key.startsWith(activeTag)){
+					overlays[key].addTo(map);
+					break;
+				}
+			}
 		}
 
-		return;
+		tagChallenges.overlay = overlays;
+		tagChallenges.oldTags = oldTags;
+
+		// Re-add layer control
+		return tagLayerControl = L.control.layers(null, overlays, { autoZIndex: true, hideSingleBase: true, sortLayers: true }).addTo(map);
 	}
 
 	return {
 		overlay: overlays,
-		oldTags: tags
+		oldTags
 	};
 }
