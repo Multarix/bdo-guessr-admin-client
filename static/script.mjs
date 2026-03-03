@@ -261,7 +261,7 @@ map.on("click", (ev) => {
 
 const localChallenges = await refreshLocalChallenges(true); // Get challenges from local file
 const prodChallenges = await refreshProdChallenges(true); // Get challanges from bdoguesser
-const tagOverlays = await refreshTags(true);
+const tagChallenges = await refreshTags(true);
 
 
 console.log(`Loaded ${localChallenges.count.easy + localChallenges.count.medium + localChallenges.count.hard + localChallenges.count.impossible} Local challenges`);
@@ -276,7 +276,7 @@ const controlLayerOptions = {
 };
 
 let layerControl = L.control.layers(tiles, allOverlays, controlLayerOptions).addTo(map);
-let tagLayerControl = L.control.layers(null, tagOverlays, { autoZIndex: true, hideSingleBase: true, sortLayers: true }).addTo(map);
+let tagLayerControl = L.control.layers(null, tagChallenges.overlay, { autoZIndex: true, hideSingleBase: true, sortLayers: true }).addTo(map);
 updateCounts(localChallenges.count, prodChallenges.count); // Update the counts on the page
 
 
@@ -319,7 +319,7 @@ document.getElementById("uploadForm").addEventListener("submit", async (evt) => 
 		hint: challengeHint.value,
 		tags: submitTags,
 		src: challengeFile.value,
-		difficulty: document.getElementById("uploadDifficulty").value
+		difficulty: document.getElementById("uploadDifficulty").value - 1
 	};
 
 	/** @type {ElectronResponse} */
@@ -399,7 +399,7 @@ updateChallengeBtn.addEventListener("click", async (evt) => {
 	};
 
 	const data = {
-		difficulty: infoDifficulty.value,
+		difficulty: infoDifficulty.value - 1,
 		hint: infoHint.value,
 		fact: infoFact.value,
 		tags: updateTags,
@@ -757,29 +757,36 @@ async function fetchAndConvertHostChallenges(url, options = {}){
  */
 async function fetchAndConvertLocalChallenges(url){
 	const response = await fetch(url);
+
+	/** @type {ChallengeFile} */
 	const challengeFile = await response.json();
 	if(authData.auth) document.getElementById("syncContainer").style.display = "";
 
-	const obj = {};
+	const difficultyConverter = {
+		"0": "easy",
+		"1": "medium",
+		"2": "hard",
+		"3": "impossible"
+	};
 
-	for(const difficulty of ["1", "2", "3", "4"]){
-		const challenges = challengeFile.challenges.filter((challenge) => {
-			return challenge.difficulty === difficulty && !challenge.uploaded;
-		});
+	/** @type {ChallengeData[]} */
+	const challenges = challengeFile.challenges.filter((challenge) => {
+		return !challenge.uploaded;
+	});
 
-		for(const challenge of challenges){
-			challenge.actualLocation = convertToLocalFormat(challenge.actualLocation);;
-		}
+	const challengeReponse = {
+		easy: [],
+		medium: [],
+		hard: [],
+		impossible: []
+	};
 
-		obj[convertDifficulty[difficulty]] = challenges;
+	for(const challenge of challenges){
+		challenge.actualLocation = convertToLocalFormat(challenge.actualLocation);
+		challengeReponse[difficultyConverter[challenge.difficulty]].push(challenge);
 	}
 
-	return {
-		easy: obj["easy"],
-		medium: obj["medium"],
-		hard: obj["hard"],
-		impossible: obj["impossible"]
-	};
+	return challengeReponse;
 }
 
 
@@ -791,8 +798,6 @@ async function fetchAndConvertLocalChallenges(url){
  ********************************
  * @name makeCircles
  * @param {ChallengeData[]} difficultyArray
- * @param {0|1|2|3} difficulty 0: Easy, 1: Medium, 2: Hard, 3: Impossible
- * @param {0|1} type 0: Local, 1: Prod
  * @returns {Promise<L.CircleMarker[]>}
  */
 async function makeCircles(difficultyArray){
@@ -812,15 +817,15 @@ async function makeCircles(difficultyArray){
 	const circles = [];
 
 	for(const item of difficultyArray){
-		const type = (item.uploaded === null || item.uploaded === undefined || !item.uploaded);
+		const type = (item.uploaded === null || item.uploaded === undefined);
 
 		const fill = (item?.tags?.length > 0) ? fillColor[item.difficulty] : "#FF00FF"; // Purple for no tags;
-		const borderColor = (item.uploaded === null || item.uploaded === undefined || !item.uploaded) ? "#000000" : "#ffffff";
+		const borderColor = type ? "#000000" : "#ffffff";
 
 		const circle = L.circleMarker(item.actualLocation, {
 			color: borderColor,
 			fillColor: fill,
-			fillOpacity: (type > 0) ? 0.5 : 1,
+			fillOpacity: (type > 0) ? 1 : 0.5,
 			radius: 8,
 			weight: 1
 		});
@@ -872,7 +877,7 @@ async function makeCircles(difficultyArray){
 
 			infoLat.value = item.actualLocation.lat;
 			infoLng.value = item.actualLocation.lng;
-			infoDifficulty.value = item.difficulty + 1;
+			infoDifficulty.value = 1 + parseInt(item.difficulty);
 			infoHint.value = item.hint ?? "";
 			infoFact.value = item.fact ?? "";
 			infoIsHost.checked = (type > 0);
@@ -952,11 +957,36 @@ async function refreshProdChallenges(controlLayer){
 	const challenges = await fetchAndConvertHostChallenges("https://bdoguessr.moe/challenges.json");
 
 	const overlays = {
-		"Easy (Prod)": L.layerGroup(await makeCircles(challenges.easy)),
-		"Medium (Prod)": L.layerGroup(await makeCircles(challenges.medium)),
-		"Hard (Prod)": L.layerGroup(await makeCircles(challenges.hard)),
-		"Impossible (Prod)": L.layerGroup(await makeCircles(challenges.impossible))
+		"Easy (Prod)": new L.MarkerClusterGroup({
+			iconCreateFunction: (cluster) => L.divIcon({
+				html: `<div class="cluster prod cluster-green">${cluster.getChildCount()}</div>`,
+				className: "",
+				iconSize: L.point(40, 40)
+			})
+		}).addLayers(await makeCircles(challenges.easy)),
+		"Medium (Prod)": new L.MarkerClusterGroup({
+			iconCreateFunction: (cluster) => L.divIcon({
+				html: `<div class="cluster prod cluster-orange">${cluster.getChildCount()}</div>`,
+				className: "",
+				iconSize: L.point(40, 40)
+			})
+		}).addLayers(await makeCircles(challenges.medium)),
+		"Hard (Prod)": new L.MarkerClusterGroup({
+			iconCreateFunction: (cluster) => L.divIcon({
+				html: `<div class="cluster prod cluster-red">${cluster.getChildCount()}</div>`,
+				className: "",
+				iconSize: L.point(40, 40)
+			})
+		}).addLayers(await makeCircles(challenges.hard)),
+		"Impossible (Prod)": new L.MarkerClusterGroup({
+			iconCreateFunction: (cluster) => L.divIcon({
+				html: `<div class="cluster prod cluster-black">${cluster.getChildCount()}</div>`,
+				className: "",
+				iconSize: L.point(40, 40)
+			})
+		}).addLayers(await makeCircles(challenges.impossible))
 	};
+
 
 	const counts = {
 		easy: challenges.easy.length,
@@ -999,10 +1029,10 @@ async function refreshLocalChallenges(controlLayer){ // Refresh the map icons
 	const challenges = await fetchAndConvertLocalChallenges(saveLocation + "/challenges.json");
 
 	const overlays = {
-		"Easy (Local)": L.layerGroup(await makeCircles(challenges.easy, "easy")),
-		"Medium (Local)": L.layerGroup(await makeCircles(challenges.medium, "medium")),
-		"Hard (Local)": L.layerGroup(await makeCircles(challenges.hard, "hard")),
-		"Impossible (Local)": L.layerGroup(await makeCircles(challenges.impossible, "impossible"))
+		"Easy (Local)": L.layerGroup(await makeCircles(challenges.easy)),
+		"Medium (Local)": L.layerGroup(await makeCircles(challenges.medium)),
+		"Hard (Local)": L.layerGroup(await makeCircles(challenges.hard)),
+		"Impossible (Local)": L.layerGroup(await makeCircles(challenges.impossible))
 	};
 
 	const counts = {
@@ -1241,7 +1271,6 @@ async function getAllTags(){
 		"eilton", "asparkan", "florin", "oquilla", "#portrattremembers",
 		"fishing", "glish", "stupidfuckinglittleassholespiders", "keplan",
 		"muzgar", "velandir", "aspakan", "node", "island", "impossible"
-
 	];
 
 	for(const challenge of allChallenges){
@@ -1270,21 +1299,38 @@ async function refreshTags(controlLayer){
 	const tags = Array.from(tagMap.keys());
 
 	const overlays = {};
-	const wasActive = {};
+	const wasActive = [];
 
 	for(const tag of tags){
 		overlays[tag] = L.layerGroup(await makeCircles(tagMap.get(tag)));
 	}
 
-	if(!controlLayer){
-		for(const tag of tags){
-			wasActive[tag] = map.hasLayer(tagOverlays.overlay[tag]);
+
+	if(!controlLayer){ // Refresh Layer Control
+		// Remove layers
+		for(const tag of tagChallenges.oldTags){
+			if(map.hasLayer(tagChallenges.overlay[tag])) wasActive.push(tag);
+
+
+			tagLayerControl.removeLayer(tagChallenges.overlay[tag]);
+			map.removeLayer(tagChallenges.overlay[tag]);
 		}
 
+		// Remove Control & Re-Add
 		tagLayerControl.remove();
-		tagLayerControl = L.control.layers(tiles, overlays, { autoZIndex: true, hideSingleBase: true, sortLayers: true }).addTo(map);
+		tagLayerControl = L.control.layers(null, overlays, { autoZIndex: true, hideSingleBase: true, sortLayers: true }).addTo(map);
+
+
+		// Re-Add Turned on Overlays
+		for(const activeTag of wasActive){
+			if(overlays[activeTag]) overlays[activeTag].addTo(map);
+		}
+
 		return;
 	}
 
-	return overlays;
+	return {
+		overlay: overlays,
+		oldTags: tags
+	};
 }
