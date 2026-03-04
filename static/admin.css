@@ -37,7 +37,18 @@ body {
 .imgPreview {
 	width: var(--screenshot-width);
 	border-radius: 8px;
+	margin-top: 0.5em;
+	margin-bottom: 0.5em;
 }
+#panorama {
+	width: 600px;
+	height: 350px;
+	border-radius: 8px;
+}
+#panorama > div {
+	border-radius: 8px;
+}
+
 .leaflet-popup-content-wrapper {
 	background: #444 !important;
 }
@@ -46,10 +57,6 @@ a.leaflet-popup-close-button {
 	right: 3px !important;
 }
 
-#panorama {
-	width: 600px;
-	height: 350px;
-}
 
 label {
 	display: block;
