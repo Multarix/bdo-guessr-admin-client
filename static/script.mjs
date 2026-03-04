@@ -996,13 +996,18 @@ async function refreshProdChallenges(controlLayer){
 		return updateCounts(localChallenges.count, prodChallenges.count);
 	}
 
+	const easyGroup = overlays["Easy (Prod)"].addTo(map);
+	const mediumGroup = overlays["Medium (Prod)"].addTo(map);
+	const hardGroup = overlays["Hard (Prod)"].addTo(map);
+	const impossibleGroup = overlays["Impossible (Prod)"].addTo(map);
+
 	return {
 		overlay: overlays,
 		count: counts,
-		easyGroup: overlays["Easy (Prod)"],
-		mediumGroup: overlays["Medium (Prod)"],
-		hardGroup: overlays["Hard (Prod)"],
-		impossibleGroup: overlays["Impossible (Prod)"]
+		easyGroup,
+		mediumGroup,
+		hardGroup,
+		impossibleGroup
 	};
 }
 
