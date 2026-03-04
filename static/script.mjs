@@ -220,13 +220,13 @@ const betaTiles = L.tileLayer('./tiles/{z}/{x}/{y}.webp', {
 const delay = ms => new Promise(res => setTimeout(res, ms));
 
 const tiles = {
-	"Local Tiles": betaTiles,
-	"Port Ratt": portRatt
+	"Local Tiles": betaTiles
+	// "Port Ratt": portRatt
 };
 
 map.setView([-144.5, 139.0], 5); // Focus roughly on Heidel
 
-// On map click, place downa a marker
+// On map click, place down a a marker
 let marker;
 map.on("click", (ev) => {
 	if(!marker){
