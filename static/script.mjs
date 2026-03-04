@@ -176,7 +176,8 @@ initialStartupStatus("Setting up leaflet...");
 const supportedIcons = {
 	"multarix": "./static/images/multarix.webp",
 	"niyah": "./static/images/niyah.webp",
-	"luci": "./static/images/luci.webp"
+	"luci": "./static/images/luci.webp",
+	"fimeira": "./static/images/fimeira.webp"
 };
 
 const map = L.map('map', {
