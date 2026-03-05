@@ -465,3 +465,16 @@ button:disabled {
 		transform: rotate(360deg);
 	}
 }
+
+.leaflet-control-layers-group-label {
+	text-align: center;
+}
+.leaflet-control-layers-group-name {
+	font-weight: bolder;
+	text-align: center;
+}
+
+.leaflet-control-layers-group:not(:first-child) {
+	margin-top: 1em;
+	border-top: 1px dashed #ddd;
+}
