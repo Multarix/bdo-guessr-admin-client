@@ -239,17 +239,7 @@ const imageBounds = L.latLngBounds(northWest, southEast);
 map.fitBounds(imageBounds);
 map.setMaxBounds(imageBounds);
 
-// Set up the map tiles
-// const portRatt = L.tileLayer('./data/{z}/{x}/{y}.jpg', {
-// 	minZoom: 3,
-// 	maxZoom: 9,
-// 	tileSize: 256,
-// 	noWrap: true,
-// 	maxNativeZoom: 7,
-// 	bounds: imageBounds
-// });
-
-const betaTiles = L.tileLayer('./tiles/{z}/{x}/{y}.webp', {
+L.tileLayer('./tiles/{z}/{x}/{y}.webp', {
 	minZoom: 3,
 	maxZoom: 9,
 	tileSize: 256,
@@ -259,11 +249,6 @@ const betaTiles = L.tileLayer('./tiles/{z}/{x}/{y}.webp', {
 }).addTo(map);
 
 const delay = ms => new Promise(res => setTimeout(res, ms));
-
-const tiles = {
-	"Local Tiles": betaTiles
-	// "Port Ratt": portRatt
-};
 
 map.setView([-144.5, 139.0], 5); // Focus roughly on Heidel
 
@@ -305,10 +290,10 @@ const controlLayerOptions = {
 	autoZIndex: true,
 	hideSingleBase: true,
 	sortLayers: true,
-	groupCheckboxes: false
+	groupCheckboxes: true
 };
 
-let layerControl = L.control.groupedLayers(tiles, challengeOverlayData.overlays, controlLayerOptions).addTo(map);
+let layerControl = L.control.groupedLayers(null, challengeOverlayData.overlays, controlLayerOptions).addTo(map);
 
 initialStartupStatus("Setting up event listeners...");
 /** *****************************
@@ -1185,7 +1170,7 @@ async function refreshLayerControl(groupedOverlays){
 	}
 
 	// Create the new layer control & add to map
-	layerControl = L.control.groupedLayers(tiles, groupedOverlays, controlLayerOptions).addTo(map);
+	layerControl = L.control.groupedLayers(null, groupedOverlays, controlLayerOptions).addTo(map);
 }
 
 
@@ -1278,15 +1263,15 @@ async function getTagOverlays(allTags){
 	const regions = [
 		"balenos", "calpheon", "drieghan", "kamasylvia",
 		"loml", "mediah", "meow", "ocean", "odyllita",
-		"serendia", "ulukita", "valencia", "moew"
+		"serendia", "ulukita", "valencia", "moew", "edania"
 	];
 
-	const featureOverlays = {};
-
-	const formatOverlays = {};
 	const format = [
 		"panorama"
 	];
+
+	const featureOverlays = {};
+	const formatOverlays = {};
 
 	/** @type {string[]} */
 	const tagNames = ["Show", "Easy", "Medium", "Hard", "Impossible"]; // Pre-populate

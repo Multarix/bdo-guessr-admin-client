@@ -469,11 +469,15 @@ button:disabled {
 .leaflet-control-layers-group-label {
 	text-align: center;
 }
+.leaflet-control-layers-group-label > input[type="checkbox"] {
+	position: relative;
+	float: inline-start;
+	accent-color: var(--button-color);
+}
 .leaflet-control-layers-group-name {
 	font-weight: bolder;
 	text-align: center;
 }
-
 .leaflet-control-layers-group:not(:first-child) {
 	margin-top: 1em;
 	border-top: 1px dashed #ddd;
