@@ -20,6 +20,15 @@ function toProperCase(){
 };
 String.prototype.toProperCase = toProperCase;
 
+const regions = [
+	"balenos", "calpheon", "drieghan", "kamasylvia",
+	"loml", "mediah", "meow", "ocean", "odyllita",
+	"serendia", "ulukita", "valencia", "moew", "edania"
+];
+
+const format = [
+	"panorama"
+];
 
 /**
  * @typedef Latlng
@@ -834,16 +843,32 @@ async function makeCircles(difficultyArray){
 
 	for(const item of difficultyArray){
 		const type = (item.uploaded === null || item.uploaded === undefined);
+		const fill = (item?.tags?.length > 0) ? fillColor[item.difficulty] : "#ff00ff"; // Purple for no tags;
 
-		const fill = (item?.tags?.length > 0) ? fillColor[item.difficulty] : "#FF00FF"; // Purple for no tags;
-		const borderColor = type ? "#000000" : "#ffffff";
+		let hasRegionTag = false;
+		for(const tag of item.tags){
+			if(regions.includes(tag)){
+				hasRegionTag = true;
+				break;
+			}
+		}
+
+		let borderColor = type ? "#000000" : "#ffffff";
+		let borderWeight = 1;
+		let fillOpacity = (type > 0) ? 0.75 : 1;
+		if(!hasRegionTag){
+			fillOpacity = 1;
+			borderColor = "#00ffff";
+			borderWeight = 4;
+			console.warn(`No region tag found on ${item.src}!\nLAT: ${item.actualLocation.lat} | LNG: ${item.actualLocation.lng}`);
+		}
 
 		const circle = L.circleMarker(item.actualLocation, {
 			color: borderColor,
 			fillColor: fill,
-			fillOpacity: (type > 0) ? 1 : 0.5,
+			fillOpacity: fillOpacity,
 			radius: 8,
-			weight: 1
+			weight: borderWeight
 		});
 
 		const popupOptions = {
@@ -867,8 +892,6 @@ async function makeCircles(difficultyArray){
 
 		circle.on("click", async (evt) => {
 			L.DomEvent.stopPropagation(evt);
-			// if(panorama) panorama.destroy();
-			// if(activePopup) activePopup.closePopup();
 			await circle.openPopup();
 
 			if(item.tags.includes("panorama")){
@@ -1260,16 +1283,6 @@ async function getTagOverlays(allTags){
 	const tags = Array.from(allTags.keys());
 
 	const regionOverlays = {};
-	const regions = [
-		"balenos", "calpheon", "drieghan", "kamasylvia",
-		"loml", "mediah", "meow", "ocean", "odyllita",
-		"serendia", "ulukita", "valencia", "moew", "edania"
-	];
-
-	const format = [
-		"panorama"
-	];
-
 	const featureOverlays = {};
 	const formatOverlays = {};
 
