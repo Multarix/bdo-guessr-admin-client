@@ -11,5 +11,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
 	syncToServer: () => ipcRenderer.invoke("syncToServer"),
 	onUpdateStatus: (callback) => ipcRenderer.on("uploadStatus", (_event, value) => callback(value)),
 	uploadDebug: (callback) => ipcRenderer.on("uploadDebug", (_event, value) => callback(value)),
-	cameFromLogin: (bool) => ipcRenderer.invoke("cameFromLogin", (bool))
+	cameFromLogin: (bool) => ipcRenderer.invoke("cameFromLogin", (bool)),
+	createDiscordActivity: (num) => ipcRenderer.invoke("createDiscordActivity", num)
 });

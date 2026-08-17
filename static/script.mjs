@@ -974,6 +974,10 @@ function updateCounts(localCount = { easy: 0, medium: 0, hard: 0, impossible: 0 
 	document.getElementById("mediumCountLocal").textContent = localCount.medium;
 	document.getElementById("hardCountLocal").textContent = localCount.hard;
 	document.getElementById("impossibleCountLocal").textContent = localCount.impossible;
+
+	const localCounts = localCount.easy + localCount.medium + localCount.hard + localCount.impossible;
+	const hostCounts = hostCount.easy + hostCount.medium + hostCount.hard + hostCount.impossible;
+	window.electronAPI.createDiscordActivity(localCounts + hostCounts);
 }
 
 

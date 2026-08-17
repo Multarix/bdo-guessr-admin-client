@@ -6,6 +6,8 @@ const path = require('path');
 const fs = require("fs");
 const fsPromise = require("fs/promises");
 
+const DiscordRPC = require("./rpc.js");
+
 const resourcesPath = (app.isPackaged) ? process.resourcesPath : path.join(__dirname, "/static/");
 let loggedIn = false;
 
@@ -411,6 +413,34 @@ async function syncChallengesToServer(){
 
 
 
+/* *************************** */
+/*                             */
+/*         Discord RPC         */
+/*                             */
+/* *************************** */
+/** @type {DiscordRPC | null} */
+let RPC = null;
+async function createDiscordActivity(_event, totalChallenges){
+	if(!RPC){
+		try {
+			const appID = "1538682212617289859";
+			RPC = new DiscordRPC(appID);
+			await RPC.connect();
+		} catch {
+			RPC = null;
+			return console.error("Could not connect to Discord RPC!");
+		}
+	}
+
+	try {
+		await RPC.updateActivity(totalChallenges);
+	} catch {
+		return console.error("Failed to update Discord's activity");
+	}
+}
+
+
+
 /* **************************** */
 /*                              */
 /*        Electron Setup        */
@@ -475,6 +505,7 @@ async function init(){
 		ipcMain.handle("setAuth", setAuth);
 		ipcMain.handle("getAuth", getAuth);
 		ipcMain.handle("cameFromLogin", cameFromLogin);
+		ipcMain.handle("createDiscordActivity", createDiscordActivity);
 
 		createWindow();
 
